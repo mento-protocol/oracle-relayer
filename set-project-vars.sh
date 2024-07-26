@@ -51,6 +51,10 @@ cache_vars() {
 	topic_name=$(awk '/variable "pubsub_topic"/{f=1} f==1&&/default/{print $3; exit}' ./infra/variables.tf | tr -d '",')
 	printf ' \033[1m%s\033[0m\n' "${topic_name}"
 
+	printf " - Scheduler Job:"
+	scheduler_job_name=$(awk '/variable "scheduler_job_name"/{f=1} f==1&&/default/{print $3; exit}' ./infra/variables.tf | tr -d '",')
+	printf ' \033[1m%s\033[0m\n' "${scheduler_job_name}"
+
 	printf "\nCaching values in"
 	printf ' \033[1m%s\033[0m...' "${cache_file}"
 
@@ -62,6 +66,7 @@ cache_vars() {
 		echo "function_name=${function_name}"
 		echo "function_entry_point=${function_entry_point}"
 		echo "topic_name=${topic_name}"
+		echo "scheduler_job_name=${scheduler_job_name}"
 	} >>"${cache_file}"
 	printf "✅\n\n"
 }
@@ -83,5 +88,6 @@ else
 	printf " - Function Name: \033[1m%s\033[0m\n" "${function_name}"
 	printf " - Function Entry Point: \033[1m%s\033[0m\n" "${function_entry_point}"
 	printf " - Pubsub Topic: \033[1m%s\033[0m\n" "${topic_name}"
+	printf " - Scheduler Job: \033[1m%s\033[0m\n" "${scheduler_job_name}"
 	printf "\n"
 fi

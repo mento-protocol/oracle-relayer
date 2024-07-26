@@ -8,7 +8,6 @@ source ./set-project-vars.sh
 
 # Fetch raw logs
 printf "\n\n"
-job_name=request-relay
-gcloud logging read "resource.type=cloud_scheduler_job AND resource.labels.job_id=${job_name}" \
+gcloud logging read "resource.type=cloud_scheduler_job AND resource.labels.job_id=${scheduler_job_name}" \
 	--limit=20 \
 	--format="table(timestamp,insertId,jsonPayload.pubsubTopic)"

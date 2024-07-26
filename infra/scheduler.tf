@@ -4,7 +4,7 @@
 resource "google_cloud_scheduler_job" "relay_requested_scheduler" {
   project     = module.project-factory.project_id
   region      = var.region
-  name        = "request-relay"
+  name        = var.scheduler_job_name
   description = "Emits a 'RelayRequested' event to Pub/Sub every minute with a relayer address as its sole parameter."
   schedule    = "* * * * *" # Run every minute
 

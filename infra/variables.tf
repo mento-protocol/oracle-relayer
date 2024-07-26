@@ -37,3 +37,8 @@ variable "pubsub_topic" {
   type    = string
   default = "relay-requested"
 }
+
+variable "scheduler_job_name" {
+  type    = string
+  default = "request-relay"
+}

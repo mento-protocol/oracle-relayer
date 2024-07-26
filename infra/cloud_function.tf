@@ -109,3 +109,7 @@ resource "google_project_iam_member" "cloudbuild_builder" {
   role    = "roles/cloudbuild.builds.builder"
   member  = "serviceAccount:${module.project-factory.service_account_email}"
 }
+
+output "function_uri" {
+  value = google_cloudfunctions2_function.relay.service_config[0].uri
+}
