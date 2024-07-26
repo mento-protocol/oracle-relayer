@@ -21,7 +21,8 @@
     "logs:jobs:url": "./get-job-logs-url.sh",
     "logs:url": "npm run logs:function:url",
     "start": "NODE_ENV=development functions-framework --target=relay",
-    "test": "./test-local-function.sh"
+    "test": "./test-local-function.sh",
+    "todo": "git ls-files -c --exclude-standard | grep -v \"package.json\" | xargs grep -n -i --color \"TODO:\\|FIXME:\""
   },
   "dependencies": {
     "@google-cloud/functions-framework": "^3.4.2"
