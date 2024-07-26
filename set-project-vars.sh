@@ -4,28 +4,26 @@ set -o pipefail # Ensure piped commands propagate exit codes properly
 set -u          # Treat unset variables as an error when substituting
 
 cache_file=".project_vars_cache"
+current_local_project_id=$(gcloud config get project)
+current_tf_state_project_id=$(terraform -chdir=infra state show module.project-factory.module.project-factory.google_project.main | grep project_id | awk '{print $3}' | tr -d '"')
+
+if [[ ${current_local_project_id} != "${current_tf_state_project_id}" ]]; then
+	printf '️\n🚨 Your local gcloud is set to the wrong project: \033[1m%s\033[0m 🚨\n' "${current_local_project_id}"
+	printf "\nRunning ./set-project-id.sh in an attempt to fix this...\n\n"
+	source ./set-project-id.sh
+	printf "\n\n"
+fi
 
 cache_vars() {
-
 	if [[ $* != *"--no-cache"* ]]; then
 		printf "No cache file found at %s.\n\n" "${cache_file}"
 	fi
 
 	printf "Loading and caching project values...\n\n"
 
-	current_local_project_id=$(gcloud config get project)
-	current_tf_state_project_id=$(terraform -chdir=infra state show module.project-factory.module.project-factory.google_project.main | grep project_id | awk '{print $3}' | tr -d '"')
-
-	if [[ ${current_local_project_id} != "${current_tf_state_project_id}" ]]; then
-		printf '️\n🚨 Your local gcloud is set to the wrong project: \033[1m%s\033[0m 🚨\n' "${current_local_project_id}"
-		printf "\nRunning ./set-project-id.sh in an attempt to fix this...\n\n"
-		source ./set-project-id.sh
-		printf "\n\n"
-	else
-		printf " - Project ID:"
-		project_id=${current_local_project_id}
-		printf ' \033[1m%s\033[0m\n' "${project_id}"
-	fi
+	printf " - Project ID:"
+	project_id=${current_tf_state_project_id}
+	printf ' \033[1m%s\033[0m\n' "${project_id}"
 
 	printf " - Project Name:"
 	project_name=$(awk '/variable "project_name"/{f=1} f==1&&/default/{print $3; exit}' ./infra/variables.tf | tr -d '",')
@@ -78,7 +76,7 @@ if [[ $* == *"--no-cache"* ]]; then
 elif [[ ! -f ${cache_file} ]]; then
 	cache_vars
 else
-	# shellcheck source=.project_vars_cache
+	# shellcheck disable=SC1090
 	source "${cache_file}"
 	printf "Using cached values:\n"
 	printf " - Project ID: \033[1m%s\033[0m\n" "${project_id}"
