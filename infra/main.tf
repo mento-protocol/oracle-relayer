@@ -10,14 +10,28 @@ terraform {
       source  = "hashicorp/archive"
       version = ">= 2.4.2"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = ">= 3.6.2"
+    }
   }
+
+  backend "gcs" {
+    bucket = "terraform-state-e400"
+  }
+
+}
+
+resource "random_id" "project_suffix" {
+  byte_length = 2
 }
 
 module "project-factory" {
   source = "git::https://github.com/terraform-google-modules/terraform-google-project-factory.git?ref=9ac04a6868cadea19a5c016d4d0a4ae35d378b05" # commit hash of v15.0.1
 
+  project_id        = "${var.project_name}-${random_id.project_suffix.hex}"
+  random_project_id = false # We generate our own above so we can use it in this module block for the bucket name
   name              = var.project_name
-  random_project_id = true
   org_id            = var.org_id
   billing_account   = var.billing_account
 
@@ -26,7 +40,8 @@ module "project-factory" {
   create_project_sa       = true
 
   # Bucket for Terraform State
-  bucket_name          = "terraform-state"
+  bucket_project       = "${var.project_name}-${random_id.project_suffix.hex}"
+  bucket_name          = "terraform-state-${random_id.project_suffix.hex}"
   bucket_location      = var.region
   bucket_versioning    = true
   bucket_force_destroy = true
