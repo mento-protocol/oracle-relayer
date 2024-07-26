@@ -10,5 +10,5 @@ source ./set-project-vars.sh
 printf "\n\n"
 job_name=request-relay
 gcloud logging read "resource.type=cloud_scheduler_job AND resource.labels.job_id=${job_name}" \
-    --limit=20 \
-    --format="table(timestamp,insertId,jsonPayload.pubsubTopic)"
+	--limit=20 \
+	--format="table(timestamp,insertId,jsonPayload.pubsubTopic)"

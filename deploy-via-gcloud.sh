@@ -15,6 +15,6 @@ gcloud functions deploy "${function_name}" \
 	--runtime nodejs20 \
 	--service-account "${service_account_email}" \
 	--source . \
-    --trigger-topic "${topic_name}"
+	--trigger-topic "${topic_name}"
 
 echo "✅ All Done!"

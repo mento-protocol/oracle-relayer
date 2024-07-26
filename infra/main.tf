@@ -1,16 +1,20 @@
 terraform {
   required_version = ">= 1.8"
+
   required_providers {
     google = {
       source  = "hashicorp/google"
       version = ">= 5.36.0"
     }
+    archive = {
+      source  = "hashicorp/archive"
+      version = ">= 2.4.2"
+    }
   }
 }
 
 module "project-factory" {
-  source  = "terraform-google-modules/project-factory/google"
-  version = ">= 15.0.1"
+  source = "git::https://github.com/terraform-google-modules/terraform-google-project-factory.git?ref=9ac04a6868cadea19a5c016d4d0a4ae35d378b05" # commit hash of v15.0.1
 
   name              = var.project_name
   random_project_id = true

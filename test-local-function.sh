@@ -7,9 +7,9 @@ set -u          # Treat unset variables as an error when substituting
 source ./set-project-vars.sh
 
 curl localhost:8080/projects/"${project_name}"/topics/"${topic_name}" \
-  -X POST \
-  -H "Content-Type: application/json" \
-  -d '{
+	-X POST \
+	-H "Content-Type: application/json" \
+	-d '{
         "message": {
             "attributes": {
               "googclient_schemaencoding": "JSON",
