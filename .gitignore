@@ -1,0 +1,16 @@
+# Terraform Stuff
+.terraform/
+.terraform*
+terraform.tfstate*
+errored.tfstate
+*.tfvars
+
+# Cloud Function Stuff
+.env
+.env.yaml
+dist/
+function-source.zip
+node_modules/
+
+# Local Stuff
+.project_vars_cache

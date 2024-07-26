@@ -1,0 +1,33 @@
+{
+  "name": "oracle-relayer",
+  "author": "Mento Labs <eng@mentolabs.xyz>",
+  "license": "UNLICENSED",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "rimraf dist && tsc",
+    "deploy": "npm run deploy:via:tf",
+    "deploy:via:gcloud": "./deploy-via-gcloud.sh",
+    "deploy:via:terraform": "npm run deploy:via:tf",
+    "deploy:via:tf": "terraform -chdir=infra apply",
+    "dev": "nodemon --watch 'src/**/*.ts' --exec 'npm run build && npm run start'",
+    "gcp-build": "npm run build",
+    "logs": "npm run logs:function",
+    "logs:url": "npm run logs:function:url",
+    "logs:function": "./get-function-logs.sh",
+    "logs:function:url": "./get-function-logs-url.sh",
+    "logs:jobs": "./get-job-logs.sh",
+    "logs:jobs:url": "./get-job-logs-url.sh",
+    "start": "NODE_ENV=development functions-framework --target=relay",
+    "test": "./test-local-function.sh"
+  },
+  "dependencies": {
+    "@google-cloud/functions-framework": "^3.4.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.5.4"
+  }
+}
