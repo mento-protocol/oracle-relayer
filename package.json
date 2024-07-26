@@ -7,6 +7,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "rimraf dist && tsc",
+    "cache:clear": "./set-project-vars.sh --no-cache",
     "deploy": "npm run deploy:via:tf",
     "deploy:via:gcloud": "./deploy-via-gcloud.sh",
     "deploy:via:terraform": "npm run deploy:via:tf",
