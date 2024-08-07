@@ -22,7 +22,8 @@
     "logs:url": "npm run logs:function:url",
     "prestart": "npm run build",
     "start": "NODE_ENV=development functions-framework --target=relay",
-    "test": "./test-local-function.sh",
+    "test": "npm run test:local",
+    "test:local": "./test-local-function.sh",
     "test:prod": "./test-deployed-function.sh",
     "todo": "git ls-files -c --exclude-standard | grep -v \"package.json\" | xargs grep -n -i --color \"TODO:\\|FIXME:\""
   },
