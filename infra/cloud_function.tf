@@ -59,7 +59,7 @@ data "archive_file" "function_source" {
 # Storage Bucket for the Cloud Function source code
 resource "google_storage_bucket" "relay_function" {
   project                     = module.project-factory.project_id
-  name                        = "${var.project_name}-relay-function-source" # Every bucket name must be globally unique
+  name                        = "${module.project-factory.project_id}-relay-function-source" # Every bucket name must be globally unique
   location                    = var.region
   uniform_bucket_level_access = true
   public_access_prevention    = "enforced"
@@ -84,7 +84,7 @@ resource "google_storage_bucket_object" "source_code" {
 resource "google_storage_bucket" "logging" {
   #checkov:skip=CKV_GCP_62:The logging bucket can't log to itself (circular dependency)
   project                     = module.project-factory.project_id
-  name                        = "${var.project_name}-logging" # Every bucket name must be globally unique
+  name                        = "${module.project-factory.project_id}-logging" # Every bucket name must be globally unique
   location                    = var.region
   uniform_bucket_level_access = true
   public_access_prevention    = "enforced"
