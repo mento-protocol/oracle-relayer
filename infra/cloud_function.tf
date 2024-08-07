@@ -110,6 +110,13 @@ resource "google_project_iam_member" "cloudbuild_builder" {
   member  = "serviceAccount:${module.project-factory.service_account_email}"
 }
 
+# Allows the cloud function to access secrets (i.e. the relayer private key) stored in Secret Manager
+resource "google_project_iam_member" "secret_accessor" {
+  project = module.project-factory.project_id
+  role    = "roles/secretmanager.secretAccessor"
+  member  = "serviceAccount:${module.project-factory.service_account_email}"
+}
+
 output "function_uri" {
   value = google_cloudfunctions2_function.relay.service_config[0].uri
 }
