@@ -9,6 +9,10 @@ resource "google_pubsub_schema" "relay_requested_schema" {
   "name": "RelayRequested",
   "fields": [
     {
+      "name": "rate_feed_name",
+      "type": "string"
+    },
+    {
       "name": "relayer_address",
       "type": "string"
     }
@@ -24,6 +28,7 @@ resource "google_pubsub_topic" "relay_requested" {
   name    = var.pubsub_topic
 
   labels = {
+    rate_feed_name  = "required"
     relayer_address = "required"
   }
 

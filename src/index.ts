@@ -11,6 +11,7 @@ interface PubsubData {
 }
 
 interface RelayRequested {
+  rate_feed_name: string;
   relayer_address: string;
 }
 
@@ -26,10 +27,11 @@ cloudEvent("relay", (event: CloudEvent<PubsubData>) => {
     return { status: "error", message: "Invalid event data format" };
   }
 
-  let parsedEventData, relayerAddress;
+  let parsedEventData, rateFeedName, relayerAddress;
   try {
     const decodedEventData = Buffer.from(eventData, "base64").toString("utf-8");
     parsedEventData = JSON.parse(decodedEventData) as RelayRequested;
+    rateFeedName = parsedEventData.rate_feed_name;
     relayerAddress = parsedEventData.relayer_address;
   } catch (error) {
     console.error("Error parsing event data:", eventData, "\n", error);
@@ -46,7 +48,7 @@ cloudEvent("relay", (event: CloudEvent<PubsubData>) => {
 
   // Add your function logic here
   console.log(
-    `Received 'RelayRequested' event with relayer address: ${relayerAddress}`,
+    `Received 'RelayRequested' event for ${rateFeedName} with relayer address: ${relayerAddress}`,
   );
 
   // Return a success response
