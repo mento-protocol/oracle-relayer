@@ -48,7 +48,9 @@ cloudEvent("relay", async (event: CloudEvent<PubsubData>) => {
     };
   }
 
-  console.log(`Received 'RelayRequested' event for ${rateFeedName}(${relayerAddress})`);
+  console.log(
+    `Received 'RelayRequested' event for ${rateFeedName}(${relayerAddress})`,
+  );
 
   const ok = await relay(relayerAddress);
   if (!ok) {
