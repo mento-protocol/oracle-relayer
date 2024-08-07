@@ -32,8 +32,6 @@ function getWalletClient(): WalletClient {
 }
 
 export default async function relay(relayerAddress: string): Promise<boolean> {
-  console.log(`Relay requested for relayer: ${relayerAddress}`);
-
   const publicClient = getPublicClient();
   const wallet = getWalletClient();
 
@@ -61,17 +59,13 @@ export default async function relay(relayerAddress: string): Promise<boolean> {
     return true;
   } catch (err) {
     if (err instanceof BaseError) {
-      const revertError = err.walk(
-        (err) => err instanceof ContractFunctionRevertedError,
-      );
+      const revertError = err.walk((err) => err instanceof ContractFunctionRevertedError);
       if (revertError instanceof ContractFunctionRevertedError) {
         const errName = revertError.data?.errorName ?? "";
         if (errName !== "Error") {
           // One of the custom errors we defined, which should include
           // a more detailed message in the metaMessages field
-          const metaMsg = revertError.metaMessages
-            ?.map((msg: string) => msg.trim())
-            .join("");
+          const metaMsg = revertError.metaMessages?.map((msg: string) => msg.trim()).join("");
 
           console.log("Contract reverted with error:", metaMsg);
         } else {

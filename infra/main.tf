@@ -17,7 +17,7 @@ terraform {
   }
 
   backend "gcs" {
-    bucket = "terraform-state-e400"
+    bucket = "terraform-state-39fc"
   }
 
 }

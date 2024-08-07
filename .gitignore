@@ -12,5 +12,9 @@ dist/
 function-source.zip
 node_modules/
 
+# JS/TS Stuff
+# We use npm for dependency management
+pnpm-lock.yaml
+
 # Local Stuff
 .project_vars_cache
