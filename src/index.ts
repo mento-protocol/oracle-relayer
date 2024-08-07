@@ -1,5 +1,7 @@
 import { cloudEvent, CloudEvent } from "@google-cloud/functions-framework";
 
+import relay from "./relay";
+
 interface PubsubData {
   subscription: string;
   message: {
@@ -14,7 +16,7 @@ interface RelayRequested {
   relayer_address: string;
 }
 
-cloudEvent("relay", (event: CloudEvent<PubsubData>) => {
+cloudEvent("relay", async (event: CloudEvent<PubsubData>) => {
   const eventData = event.data?.message.data;
 
   if (!eventData) {
@@ -44,11 +46,10 @@ cloudEvent("relay", (event: CloudEvent<PubsubData>) => {
     };
   }
 
-  // Add your function logic here
-  console.log(
-    `Received 'RelayRequested' event with relayer address: ${relayerAddress}`,
-  );
+  const ok = await relay(relayerAddress);
+  if (!ok) {
+    return { status: "error", message: "Relay failed" };
+  }
 
-  // Return a success response
   return { status: "success" };
 });
