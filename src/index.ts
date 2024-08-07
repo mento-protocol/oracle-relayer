@@ -41,16 +41,13 @@ cloudEvent("relay", async (event: CloudEvent<PubsubData>) => {
   }
 
   if (!relayerAddress) {
-    // Return an error response
     return {
       status: "error",
       message: `Relayer address not found in event data: ${JSON.stringify(parsedEventData, null, 4)}`,
     };
   }
 
-  console.log(
-    `Received 'RelayRequested' event for ${rateFeedName}(${relayerAddress})`,
-  );
+  console.log(`Relay request received for ${rateFeedName} (${relayerAddress})`);
 
   const ok = await relay(relayerAddress);
   if (!ok) {
