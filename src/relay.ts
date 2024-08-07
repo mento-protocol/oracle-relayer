@@ -12,7 +12,7 @@ import {
 import { celo, celoAlfajores } from "viem/chains";
 import config from "./config";
 import getSecret from "./get-secret";
-import { mockRelayerAbi } from "./relayer-abi";
+import { relayerAbi } from "./relayer-abi";
 import { privateKeyToAccount } from "viem/accounts";
 
 function getPublicClient() {
@@ -40,7 +40,7 @@ export default async function relay(relayerAddress: string): Promise<boolean> {
 
   const contract = getContract({
     address: relayerAddress as Address,
-    abi: mockRelayerAbi,
+    abi: relayerAbi,
     client: { public: publicClient, wallet },
   });
 
