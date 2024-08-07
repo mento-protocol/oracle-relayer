@@ -1,4 +1,5 @@
 import {
+  Address,
   BaseError,
   createPublicClient,
   createWalletClient,
@@ -9,6 +10,8 @@ import {
 } from "viem";
 
 import { celo, celoAlfajores } from "viem/chains";
+import config from "./config";
+import getSecret from "./get-secret";
 import { mockRelayerAbi } from "./relayer-abi";
 import { privateKeyToAccount } from "viem/accounts";
 
@@ -20,12 +23,12 @@ function getPublicClient() {
   });
 }
 
-function getWalletClient(): WalletClient {
+async function getWalletClient(): Promise<WalletClient> {
   const isMainnet = process.env.NODE_ENV !== "development";
+  const pk = await getSecret(config.RELAYER_PK_SECRET_ID);
+
   return createWalletClient({
-    // TODO: Replace with SecretManager
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    account: privateKeyToAccount(process.env.PRIVATE_KEY! as `0x${string}`),
+    account: privateKeyToAccount(pk as Address),
     chain: isMainnet ? celo : celoAlfajores,
     transport: http(),
   });
@@ -33,10 +36,10 @@ function getWalletClient(): WalletClient {
 
 export default async function relay(relayerAddress: string): Promise<boolean> {
   const publicClient = getPublicClient();
-  const wallet = getWalletClient();
+  const wallet = await getWalletClient();
 
   const contract = getContract({
-    address: relayerAddress as `0x${string}`,
+    address: relayerAddress as Address,
     abi: mockRelayerAbi,
     client: { public: publicClient, wallet },
   });

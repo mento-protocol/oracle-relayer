@@ -24,6 +24,8 @@ resource "google_cloudfunctions2_function" "relay" {
     timeout_seconds       = 60
 
     environment_variables = {
+      GCP_PROJECT_ID       = module.project-factory.project_id
+      RELAYER_PK_SECRET_ID = google_secret_manager_secret.relayer_pk.secret_id
       # Logs execution ID for easier debugging => https://cloud.google.com/functions/docs/monitoring/logging#viewing_runtime_logs
       LOG_EXECUTION_ID = "true"
     }
