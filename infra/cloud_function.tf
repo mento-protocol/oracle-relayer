@@ -28,6 +28,7 @@ resource "google_cloudfunctions2_function" "relay" {
       RELAYER_PK_SECRET_ID = google_secret_manager_secret.relayer_pk.secret_id
       # Logs execution ID for easier debugging => https://cloud.google.com/functions/docs/monitoring/logging#viewing_runtime_logs
       LOG_EXECUTION_ID = "true"
+      # TODO: Remove this before go-live
       # For testing purposes until we start to deploy on Mainnet
       NODE_ENV = "development"
     }
