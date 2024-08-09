@@ -20,6 +20,16 @@ variable "billing_account" {
   type = string
 }
 
+variable "relayer_pk_secret_id" {
+  type    = string
+  default = "relayer-private-key"
+}
+
+variable "relayer_pk" {
+  type      = string
+  sensitive = true
+}
+
 #####################################################################################
 # The below are mainly kept in vars so we can read them easier in the shell scripts #
 #####################################################################################
