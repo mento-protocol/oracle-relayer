@@ -28,7 +28,10 @@
     "todo": "git ls-files -c --exclude-standard | grep -v \"package.json\" | xargs grep -n -i --color \"TODO:\\|FIXME:\""
   },
   "dependencies": {
-    "@google-cloud/functions-framework": "^3.4.2"
+    "@google-cloud/functions-framework": "^3.4.2",
+    "@google-cloud/secret-manager": "^5.6.0",
+    "env-schema": "^6.0.0",
+    "viem": "^2.18.8"
   },
   "devDependencies": {
     "@eslint/js": "^9.7.0",

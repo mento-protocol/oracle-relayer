@@ -24,8 +24,13 @@ resource "google_cloudfunctions2_function" "relay" {
     timeout_seconds       = 60
 
     environment_variables = {
+      GCP_PROJECT_ID       = module.project-factory.project_id
+      RELAYER_PK_SECRET_ID = google_secret_manager_secret.relayer_pk.secret_id
       # Logs execution ID for easier debugging => https://cloud.google.com/functions/docs/monitoring/logging#viewing_runtime_logs
       LOG_EXECUTION_ID = "true"
+      # TODO: Remove this before go-live
+      # For testing purposes until we start to deploy on Mainnet
+      NODE_ENV = "development"
     }
   }
 
@@ -107,6 +112,13 @@ resource "google_storage_bucket_iam_member" "cloud_build_storage_access" {
 resource "google_project_iam_member" "cloudbuild_builder" {
   project = module.project-factory.project_id
   role    = "roles/cloudbuild.builds.builder"
+  member  = "serviceAccount:${module.project-factory.service_account_email}"
+}
+
+# Allows the cloud function to access secrets (i.e. the relayer private key) stored in Secret Manager
+resource "google_project_iam_member" "secret_accessor" {
+  project = module.project-factory.project_id
+  role    = "roles/secretmanager.secretAccessor"
   member  = "serviceAccount:${module.project-factory.service_account_email}"
 }
 

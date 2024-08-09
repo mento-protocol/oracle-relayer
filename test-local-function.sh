@@ -17,7 +17,7 @@ curl localhost:8080/projects/"${project_name}"/topics/"${topic_name}" \
               "googclient_schemaencoding": "JSON",
               "googclient_schemarevisionid": "a75ff1fd"
             },
-            "data": "eyAicmF0ZV9mZWVkX25hbWUiOiAiUEhQL1VTRCIsICJyZWxheWVyX2FkZHJlc3MiOiAiMHhlZmI4NDkzNTIzOWRhY2RlY2Y3YzViYTc2ZDhkZTQwYjA3N2I3YjMzIiB9",
+            "data": "eyJyYXRlX2ZlZWRfbmFtZSI6IlBIUC9VU0QiLCJyZWxheWVyX2FkZHJlc3MiOiIweDMwMDVhMzNhOTc4MkY0YzFjY2ZhMGZGZGI4N0EwMzRiOTVCN2FkOTAifQ==",
             "messageId": "11844765153650126",
             "message_id": "11844765153650126",
             "publishTime": "2024-07-26T11:09:00.513Z",
