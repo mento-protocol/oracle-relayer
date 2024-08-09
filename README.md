@@ -55,9 +55,78 @@
 
 1. To fetch the secrets used by this function from Secret Manager, you'll need the `Secret Manager Secret Accessor` IAM role assigned to your Google Cloud Account
 
-## Migrate State
+## Local Infra Setup (when project is deployed already)
 
-- terraform state show "module.project-factory.module.project-factory.google_storage_bucket.project_bucket[0]" | grep name | awk -F '"' '{print $2}' | pbcopy
+1. Set your local `gcloud` project to the watchdog project:
+
+   ```sh
+   ./set-project-vars.sh
+   ```
+
+1. Inside the `./infra` folder, run `terraform init` to install all required terraform providers and sync the terraform state from the project's google cloud storage bucket:
+
+   ```sh
+   cd infra
+   terraform init
+   ```
+
+1. While inside the `infra` folder, create `terraform.tfvars` file. This is like `.env` for Terraform:
+
+   ```sh
+   touch terraform.tfvars
+   # This file is `.gitignore`d to avoid accidentally leaking sensitive data
+   ```
+
+1. Add the following values to your `terraform.tfvars`, you can look up all values in the Google Cloud console (or ask another dev to share his local `terraform.tfvars` with you)
+
+   ```sh
+   # Get it via `gcloud organizations list`
+   org_id               = "<our-org-id>"
+
+   # Get it via `gcloud billing accounts list` (pick the GmbH account)
+   billing_account      = "<our-billing-account-id>"
+   ```
+
+## Running and testing the Cloud Function locally
+
+- `npm install`
+- `npm start` to start a local cloud function
+- `npm test` to call the local cloud function with a mocked `RelayRequested` pubsub event
+
+## Testing the Deployed Cloud Function
+
+You can test the deployed cloud function by manually emitting a pubsub trigger event.
+
+```sh
+npm run test:prod
+```
+
+## Updating the Cloud Function
+
+You have two options, using `terraform` or the `gcloud` cli. Both are perfectly fine to use.
+
+1. Via `terraform` by running `npm run deploy:via:tf`
+   - How? The npm task will:
+     - Call `terraform apply` which re-deploys the function with the latest code from your local machine
+   - Pros
+     - Keeps the terraform state clean
+     - Same command for all changes, regardless of infra or cloud function code
+   - Cons
+     - Less familiar way of deploying cloud functions (if you're used to `gcloud functions deploy`)
+     - Less log output
+     - Slightly slower because `terraform apply` will always fetch the current state from the cloud storage bucket before deploying
+2. Via `gcloud` by running `npm run deploy:via:gcloud`
+   - How? The npm task will:
+     - Look up the service account used by the cloud function
+     - Call `gcloud functions deploy` with the correct parameters
+   - Pros
+     - Familiar way of deploying cloud functions
+     - More log output making deployment failures slightly faster to debug
+     - Slightly faster because we're skipping the terraform state lookup
+   - Cons
+     - Will lead to inconsistent terraform state (because terraform is tracking the function source code and its version)
+     - Different commands to remember when updating infra components vs cloud function source code
+     - Will only work for updating a pre-existing cloud function's code, will fail for a first-time deploy
 
 ## Infra Deployment via Terraform
 
@@ -149,3 +218,32 @@ For all team members to be able to manage the Google Cloud infrastructure, you n
    rm terraform.tfstate
    rm terraform.tfstate.backup
    ```
+
+## Debugging Problems
+
+### View Logs
+
+For most problems, you'll likely want to check the cloud function logs first.
+
+- `npm run logs` will print the latest 50 log entries into your local terminal for quick and easy access
+- `npm run logs:url` will print the URL to the function logs in the Google Cloud Console for full access
+
+## Teardown
+
+Before destroying the project, you'll need to migrate the terraform state from the cloud bucket backend onto your local machine.
+Because `terraform destroy` will also destroy the bucket that the terraform state is stored in so the moment the bucket gets
+destroyed, the terraform state will be gone and the destroy command will fail and the project deletion might not succeed.
+
+1. Outcomment the `backend` section in `main.tf` again
+
+   ```hcl
+   # backend "gcs" {
+   #   bucket = "terraform-state-<random-suffix>"
+   # }
+   ```
+
+1. Run `terraform init -migrate-state` to move the state into a local `terraform.tfstate` file
+
+1. Now run `terraform destroy` to delete all cloud resources associated with this project
+   - You might run into permission issues here, especially around deleting the associated billing account resources
+   - I didn't have time to figure out the minimum set of permissions required to delete this project so the easiest would be to let an organization owner (i.e. Bogdan) run this with full permissions
