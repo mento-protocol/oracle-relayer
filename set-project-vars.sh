@@ -4,21 +4,34 @@ set -o pipefail # Ensure piped commands propagate exit codes properly
 set -u          # Treat unset variables as an error when substituting
 
 cache_file=".project_vars_cache"
-current_local_project_id=$(gcloud config get project)
-current_tf_state_project_id=$(terraform -chdir=infra state show module.project-factory.module.project-factory.google_project.main | grep project_id | awk '{print $3}' | tr -d '"')
 
-if [[ ${current_local_project_id} != "${current_tf_state_project_id}" ]]; then
-	printf '️\n🚨 Your local gcloud is set to the wrong project: \033[1m%s\033[0m 🚨\n' "${current_local_project_id}"
-	printf "\nRunning ./set-project-id.sh in an attempt to fix this...\n\n"
-	source ./set-project-id.sh
-	printf "\n\n"
-fi
-
-cache_vars() {
-	if [[ $* != *"--no-cache"* ]]; then
-		printf "No cache file found at %s.\n\n" "${cache_file}"
+# Function to load values from cache
+load_cache() {
+	if [[ -f ${cache_file} ]]; then
+		# shellcheck disable=SC1090
+		source "${cache_file}"
+		return 0
+	else
+		return 1
 	fi
+}
 
+# Function to write values to cache
+write_cache() {
+	{
+		echo "project_id=${project_id}"
+		echo "project_name=${project_name}"
+		echo "region=${region}"
+		echo "service_account_email=${service_account_email}"
+		echo "function_name=${function_name}"
+		echo "function_entry_point=${function_entry_point}"
+		echo "topic_name=${topic_name}"
+		echo "scheduler_job_name=${scheduler_job_name}"
+	} >>"${cache_file}"
+}
+
+# Function to fetch and print values
+fetch_values() {
 	printf "Loading and caching project values...\n\n"
 
 	printf " - Project ID:"
@@ -55,30 +68,41 @@ cache_vars() {
 
 	printf "\nCaching values in"
 	printf ' \033[1m%s\033[0m...' "${cache_file}"
+	write_cache
 
-	{
-		echo "project_id=${project_id}"
-		echo "project_name=${project_name}"
-		echo "region=${region}"
-		echo "service_account_email=${service_account_email}"
-		echo "function_name=${function_name}"
-		echo "function_entry_point=${function_entry_point}"
-		echo "topic_name=${topic_name}"
-		echo "scheduler_job_name=${scheduler_job_name}"
-	} >>"${cache_file}"
 	printf "✅\n\n"
 }
 
-if [[ $* == *"--no-cache"* ]]; then
-	echo "Invalidating cache..."
+# Function to invalidate cache
+invalidate_cache() {
+	printf "Invalidating cache...\n"
 	rm -f "${cache_file}"
-	cache_vars --no-cache
-elif [[ ! -f ${cache_file} ]]; then
-	cache_vars
-else
-	# shellcheck disable=SC1090
-	source "${cache_file}"
-	printf "Using cached values:\n"
+}
+
+# Main script logic
+current_local_project_id=$(gcloud config get project)
+current_tf_state_project_id=$(terraform -chdir=infra state show module.project-factory.module.project-factory.google_project.main | grep project_id | awk '{print $3}' | tr -d '"')
+
+if [[ ${current_local_project_id} != "${current_tf_state_project_id}" ]]; then
+	printf '️\n🚨 Your local gcloud is set to the wrong project: \033[1m%s\033[0m 🚨\n' "${current_local_project_id}"
+	printf "\nRunning ./set-project-id.sh in an attempt to fix this...\n\n"
+	source ./set-project-id.sh
+	printf "\n\n"
+	invalidate_cache
+	fetch_values
+	exit
+fi
+
+if [[ ${1-} == "--invalidate-cache" ]]; then
+	invalidate_cache
+fi
+
+# Separate the invocation of load_cache from the if condition
+load_cache
+cache_loaded=$?
+
+if [[ ${cache_loaded} -eq 0 ]]; then
+	printf "Using cached values from %s:\n" "${cache_file}"
 	printf " - Project ID: \033[1m%s\033[0m\n" "${project_id}"
 	printf " - Project Name: \033[1m%s\033[0m\n" "${project_name}"
 	printf " - Region: \033[1m%s\033[0m\n" "${region}"
@@ -87,5 +111,6 @@ else
 	printf " - Function Entry Point: \033[1m%s\033[0m\n" "${function_entry_point}"
 	printf " - Pubsub Topic: \033[1m%s\033[0m\n" "${topic_name}"
 	printf " - Scheduler Job: \033[1m%s\033[0m\n" "${scheduler_job_name}"
-	printf "\n"
+else
+	fetch_values
 fi

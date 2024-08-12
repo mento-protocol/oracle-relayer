@@ -52,6 +52,11 @@ actions:
     - trunk-check-pre-push
     - trunk-fmt-pre-commit
     - trunk-upgrade-available
+  definitions:
+    - id: todo-git-hook
+      triggers:
+        - git_hooks: [pre-push, pre-commit]
+      run: npm run todo
 tools:
   disabled:
     - commitizen
