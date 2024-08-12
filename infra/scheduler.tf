@@ -11,7 +11,7 @@ resource "google_cloud_scheduler_job" "php_usd" {
     data = base64encode(jsonencode({
       rate_feed_name = "PHP/USD"
       # TODO: Replace with the actual relayer address for PHP/USD after it's deployed
-      relayer_address = "0xefb84935239dacdecf7c5ba76d8de40b077b7b33"
+      relayer_address = "0x3005a33a9782f4c1ccfa0ffdb87a034b95b7ad90"
     }))
   }
 }
