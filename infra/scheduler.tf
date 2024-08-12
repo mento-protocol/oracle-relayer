@@ -3,7 +3,7 @@ resource "google_cloud_scheduler_job" "php_usd" {
   project     = module.project-factory.project_id
   region      = var.region
   name        = var.scheduler_job_name
-  description = "Emits a 'RelayRequested' event to Pub/Sub every minute with a relayer address as its sole parameter."
+  description = "Emits a 'RelayRequested' event to Pub/Sub every minute with a rate feed name and a relayer address as parameters."
   schedule    = "* * * * *" # Run every minute
 
   pubsub_target {
