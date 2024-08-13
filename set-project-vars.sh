@@ -83,34 +83,38 @@ invalidate_cache() {
 current_local_project_id=$(gcloud config get project)
 current_tf_state_project_id=$(terraform -chdir=infra state show module.project-factory.module.project-factory.google_project.main | grep project_id | awk '{print $3}' | tr -d '"')
 
-if [[ ${current_local_project_id} != "${current_tf_state_project_id}" ]]; then
-	printf '️\n🚨 Your local gcloud is set to the wrong project: \033[1m%s\033[0m 🚨\n' "${current_local_project_id}"
-	printf "\nRunning ./set-project-id.sh in an attempt to fix this...\n\n"
-	source ./set-project-id.sh
-	printf "\n\n"
-	invalidate_cache
-	fetch_values
-	exit
-fi
+main() {
+	if [[ ${current_local_project_id} != "${current_tf_state_project_id}" ]]; then
+		printf '️\n🚨 Your local gcloud is set to the wrong project: \033[1m%s\033[0m 🚨\n' "${current_local_project_id}"
+		printf "\nRunning ./set-project-id.sh in an attempt to fix this...\n\n"
+		source ./set-project-id.sh
+		printf "\n\n"
+		invalidate_cache
+		fetch_values
+		return
+	fi
 
-if [[ ${1-} == "--invalidate-cache" ]]; then
-	invalidate_cache
-fi
+	if [[ ${1-} == "--invalidate-cache" ]]; then
+		invalidate_cache
+	fi
 
-# Separate the invocation of load_cache from the if condition
-load_cache
-cache_loaded=$?
+	# Separate the invocation of load_cache from the if condition
+	load_cache
+	cache_loaded=$?
 
-if [[ ${cache_loaded} -eq 0 ]]; then
-	printf "Using cached values from %s:\n" "${cache_file}"
-	printf " - Project ID: \033[1m%s\033[0m\n" "${project_id}"
-	printf " - Project Name: \033[1m%s\033[0m\n" "${project_name}"
-	printf " - Region: \033[1m%s\033[0m\n" "${region}"
-	printf " - Service Account: \033[1m%s\033[0m\n" "${service_account_email}"
-	printf " - Function Name: \033[1m%s\033[0m\n" "${function_name}"
-	printf " - Function Entry Point: \033[1m%s\033[0m\n" "${function_entry_point}"
-	printf " - Pubsub Topic: \033[1m%s\033[0m\n" "${topic_name}"
-	printf " - Scheduler Job: \033[1m%s\033[0m\n" "${scheduler_job_name}"
-else
-	fetch_values
-fi
+	if [[ ${cache_loaded} -eq 0 ]]; then
+		printf "Using cached values from %s:\n" "${cache_file}"
+		printf " - Project ID: \033[1m%s\033[0m\n" "${project_id}"
+		printf " - Project Name: \033[1m%s\033[0m\n" "${project_name}"
+		printf " - Region: \033[1m%s\033[0m\n" "${region}"
+		printf " - Service Account: \033[1m%s\033[0m\n" "${service_account_email}"
+		printf " - Function Name: \033[1m%s\033[0m\n" "${function_name}"
+		printf " - Function Entry Point: \033[1m%s\033[0m\n" "${function_entry_point}"
+		printf " - Pubsub Topic: \033[1m%s\033[0m\n" "${topic_name}"
+		printf " - Scheduler Job: \033[1m%s\033[0m\n" "${scheduler_job_name}"
+	else
+		fetch_values
+	fi
+}
+
+main "$@"
