@@ -8,12 +8,13 @@ import {
   http,
   WalletClient,
 } from "viem";
-
 import { celo, celoAlfajores } from "viem/chains";
+import { privateKeyToAccount } from "viem/accounts";
+
 import config from "./config";
+import getLogger from "./logger";
 import getSecret from "./get-secret";
 import { relayerAbi } from "./relayer-abi";
-import { privateKeyToAccount } from "viem/accounts";
 
 function getPublicClient() {
   const isMainnet = process.env.NODE_ENV !== "development";
@@ -34,7 +35,11 @@ async function getWalletClient(): Promise<WalletClient> {
   });
 }
 
-export default async function relay(relayerAddress: string): Promise<boolean> {
+export default async function relay(
+  relayerAddress: string,
+  rateFeedName: string,
+): Promise<boolean> {
+  const logger = getLogger(rateFeedName);
   const publicClient = getPublicClient();
   const wallet = await getWalletClient();
 
@@ -54,11 +59,11 @@ export default async function relay(relayerAddress: string): Promise<boolean> {
     });
 
     if (receipt.status !== "success") {
-      console.log(`Relay tx failed: ${hash}`);
+      logger.error(`Relay tx failed: ${hash}`);
       return false;
     }
 
-    console.log(`Relay tx succeeded: ${hash}`);
+    logger.info(`Relay succeeded: ${hash}`);
     return true;
   } catch (err) {
     if (err instanceof BaseError) {
@@ -74,17 +79,17 @@ export default async function relay(relayerAddress: string): Promise<boolean> {
             ?.map((msg: string) => msg.trim())
             .join("");
 
-          console.log("Contract reverted with error:", metaMsg);
+          logger.error("Contract reverted with error:", metaMsg);
         } else {
           // A generic revert error, which should include the reason
-          console.log("Contract reverted with reason:", revertError.reason);
+          logger.error("Contract reverted with reason:", revertError.reason);
         }
       } else {
         // Non-revert error, for example not enough balance, tx broadcast timeout, etc.
-        console.log("Error relaying tx:", err.shortMessage);
+        logger.error(`Error relaying tx: ${err.shortMessage}`);
       }
     } else {
-      console.log("Unknown error relaying tx:", err);
+      logger.error(`Unknown error relaying tx:`, err);
     }
 
     return false;
