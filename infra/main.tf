@@ -54,6 +54,7 @@ module "project-factory" {
     "eventarc.googleapis.com",
     "pubsub.googleapis.com",
     "run.googleapis.com",
+    "secretmanager.googleapis.com",
     "storage-api.googleapis.com",
   ]
 }
