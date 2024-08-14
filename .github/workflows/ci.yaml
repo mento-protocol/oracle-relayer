@@ -25,6 +25,5 @@ jobs:
         with:
           check-mode: all
       - run: echo $TRUNK_PATH
-      - run: ls -al .trunk/tools
-      - run: ./.trunk/tools/trunk check list
+      - run: ls -alL .trunk/tools
       - run: $TRUNK_PATH check list
