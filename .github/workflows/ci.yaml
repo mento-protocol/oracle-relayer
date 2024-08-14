@@ -24,4 +24,5 @@ jobs:
       - uses: trunk-io/trunk-action@v1
         with:
           check-mode: all
-      - run: trunk check list
+      - run: ${TRUNK_PATH:-trunk} check list
+      - run: ${TRUNK_PATH:-trunk} check --filter eslint
