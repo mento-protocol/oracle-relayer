@@ -6,7 +6,7 @@ runs:
   steps:
     - name: Enable eslint
       shell: bash
-      run: trunk check enable eslint
+      run: ${TRUNK_PATH:-trunk} check enable eslint
     - name: Install eslint dependencies
       shell: bash
       run: npm install
