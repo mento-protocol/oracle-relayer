@@ -1,0 +1,11 @@
+name: Trunk Check setup
+description: Set up dependencies for Trunk Check
+runs:
+  using: composite
+  steps:
+    - name: test
+      shell: bash
+      run: echo $TRUNK_PATH
+    - name: Install eslint dependencies
+      shell: bash
+      run: npm install
