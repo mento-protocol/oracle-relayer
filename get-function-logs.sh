@@ -11,7 +11,8 @@ raw_logs=$(gcloud logging read "resource.labels.function_name=${function_name}" 
 	--format json \
 	--limit 50)
 
-echo "${raw_logs}" | jq -r '.[] | if .severity == "ERROR" then
+printf "\n"
+echo "${raw_logs}" | jq -r 'reverse | .[] | if .severity == "ERROR" then
   "\u001b[31m[\(.severity)]\u001b[0m \u001b[33m\(.timestamp | sub("T"; " ") | sub("\\..*"; ""))\u001b[0m: \(.jsonPayload.message)"
 else
   "[\(.severity)] \u001b[33m\(.timestamp | sub("T"; " ") | sub("\\..*"; ""))\u001b[0m: \(.jsonPayload.message)"
