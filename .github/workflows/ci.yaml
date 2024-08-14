@@ -23,6 +23,7 @@ jobs:
         uses: trunk-io/trunk-action/setup@v1
       - uses: trunk-io/trunk-action@v1
         with:
+          cache: false
           check-mode: all
       - run: echo $TRUNK_PATH
       - run: ls -alL .trunk/tools
