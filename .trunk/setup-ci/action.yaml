@@ -1,0 +1,12 @@
+name: Trunk Code Quality setup
+description: Set up dependencies for Trunk Code Quality
+
+runs:
+  using: composite
+  steps:
+    - name: Enable eslint
+      shell: bash
+      run: trunk check enable eslint
+    - name: Install eslint dependencies
+      shell: bash
+      run: npm install

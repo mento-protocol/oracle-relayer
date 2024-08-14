@@ -19,8 +19,7 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: trunk check enable eslint
-      - run: trunk check list
       - uses: trunk-io/trunk-action@v1
         with:
           check-mode: all
+      - run: trunk check list
