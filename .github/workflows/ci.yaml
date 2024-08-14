@@ -24,5 +24,7 @@ jobs:
       - uses: trunk-io/trunk-action@v1
         with:
           check-mode: all
-      - run: which trunk
+      - run: echo $TRUNK_PATH
+      - run: ls -al .trunk/tools
       - run: ./.trunk/tools/trunk check list
+      - run: $TRUNK_PATH check list
