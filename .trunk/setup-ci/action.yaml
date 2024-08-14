@@ -1,0 +1,8 @@
+name: Trunk Check setup
+description: Set up dependencies for Trunk Check
+runs:
+  using: composite
+  steps:
+    - name: Install eslint dependencies
+      shell: bash
+      run: which trunk && ${TRUNK_PATH:-trunk} check list
