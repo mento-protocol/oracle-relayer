@@ -87,6 +87,15 @@
    billing_account      = "<our-billing-account-id>"
    ```
 
+1. Add the relayer account private key from Google Cloud Secret Manager to your local `terraform.tfvars`:
+
+   ```sh
+   # You need the "Secret Manager Secret Accessor" IAM role for this command to succeed
+   echo "\nrelayer_pk = \"$(gcloud secrets versions access latest --secret relayer-private-key)\"" >> terraform.tfvars
+   ```
+
+1. Auto-generate a local `.env` file by running `npm run generate:env`
+
 ## Running and testing the Cloud Function locally
 
 - `npm install`
