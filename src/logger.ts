@@ -1,4 +1,5 @@
 import { LoggingWinston } from "@google-cloud/logging-winston";
+import type { LogEntry } from "winston";
 import winston, { format } from "winston";
 
 export default function getLogger(rateFeed: string): winston.Logger {
@@ -11,7 +12,12 @@ export default function getLogger(rateFeed: string): winston.Logger {
       ? [
           new winston.transports.Console({
             level: "info",
-            format: format.combine(format.timestamp(), format.prettyPrint()),
+            format: format.combine(
+              format.timestamp(),
+              format.printf((log: LogEntry) => {
+                return `[${log.level}] ${String(log.timestamp)}: [${rateFeed}] ${log.message}`;
+              }),
+            ),
           }),
         ]
       : []),

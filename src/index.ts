@@ -19,6 +19,9 @@ interface RelayRequested {
 }
 
 cloudEvent("relay", async (event: CloudEvent<PubsubData>) => {
+  // For better log readability
+  console.log("");
+
   const eventData = event.data?.message.data;
 
   if (!eventData) {
