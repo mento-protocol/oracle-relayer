@@ -26,5 +26,5 @@ jobs:
           cache: false
           check-mode: all
       - run: echo $TRUNK_PATH
-      - run: ls -alL .trunk/tools
-      - run: \"${TRUNK_PATH}\" check list
+      - run: ls -alL ${TRUNK_TMPDIR}
+      - run: ${TRUNK_PATH} check list
