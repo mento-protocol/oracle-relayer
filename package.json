@@ -14,6 +14,7 @@
     "deploy:via:tf": "terraform -chdir=infra apply",
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'npm run build && npm run start'",
     "gcp-build": "npm run build",
+    "generate:env": "terraform -chdir=infra apply -target=local_file.env_file",
     "logs": "npm run logs:function",
     "logs:function": "./get-function-logs.sh",
     "logs:function:url": "./get-function-logs-url.sh",
