@@ -161,6 +161,13 @@ You must have the following Google Cloud IAM roles to deploy this project via Te
 
 1. Run `terraform init` to install the required providers and init a temporary local backend in a `terraform.tfstate` file
 
+1. Add the relayer account private key to your local `terraform.tfvars`. You can either get the existing one by searching for `Oracle Relayer` inside the shared Eng. folder on LastPass, or generate a new one if you wish to rotate the account
+
+   ```sh
+   # This will be stored in Google Secret Manager upon deployment via Terraform
+   echo "relayer_pk = \"<relayer_pk>\"" >> terraform.tfvars
+   ```
+
 1. **Deploy the entire project via `terraform apply`**
 
    - You will see an overview of all resources to be created. Review them if you like and then type "Yes" to confirm.
