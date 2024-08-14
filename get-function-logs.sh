@@ -7,16 +7,13 @@ set -u          # Treat unset variables as an error when substituting
 source ./set-project-vars.sh
 
 # Fetch raw logs
-raw_logs=$(gcloud functions logs read "${function_name}" \
-	--region "${region}" \
+raw_logs=$(gcloud logging read "resource.labels.function_name=${function_name}" \
 	--format json \
-	--limit 50 \
-	--sort-by TIME_UTC)
+	--limit 50)
 
-# Format logs
-printf "\n\n"
-echo "${raw_logs}" | jq -r '.[] | if .level == "E" then 
-  "\u001b[31m[\(.level)]\u001b[0m \u001b[33m\(.time_utc)\u001b[0m: \(.log)" 
-else 
-  "[\(.level)] \u001b[33m\(.time_utc)\u001b[0m: \(.log)" 
+printf "\n"
+echo "${raw_logs}" | jq -r 'reverse | .[] | if .severity == "ERROR" then
+  "\u001b[31m[\(.severity)]\u001b[0m \u001b[33m\(.timestamp | sub("T"; " ") | sub("\\..*"; ""))\u001b[0m: \(.jsonPayload.message)"
+else
+  "[\(.severity)] \u001b[33m\(.timestamp | sub("T"; " ") | sub("\\..*"; ""))\u001b[0m: \(.jsonPayload.message)"
 end'

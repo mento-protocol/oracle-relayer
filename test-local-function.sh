@@ -6,11 +6,14 @@ set -u          # Treat unset variables as an error when substituting
 # Load the project variables
 source ./set-project-vars.sh
 
+printf "\n"
+
 # NOTE: The `data` field is base64 encoded. The value of the `data` field is a JSON object that adheres to the pubsub schema.
 # For example: `{ "rate_feed_name": "PHP/USD", "relayer_address": "0xefb84935239dacdecf7c5ba76d8de40b077b7b33" }`
 curl localhost:8080/projects/"${project_name}"/topics/"${topic_name}" \
 	-X POST \
 	-H "Content-Type: application/json" \
+	-w "\n" \
 	-d '{
         "message": {
             "attributes": {

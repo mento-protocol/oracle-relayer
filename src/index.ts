@@ -1,5 +1,6 @@
 import { cloudEvent, CloudEvent } from "@google-cloud/functions-framework";
 
+import getLogger from "./logger";
 import relay from "./relay";
 
 interface PubsubData {
@@ -18,6 +19,9 @@ interface RelayRequested {
 }
 
 cloudEvent("relay", async (event: CloudEvent<PubsubData>) => {
+  // For better log readability
+  console.log("");
+
   const eventData = event.data?.message.data;
 
   if (!eventData) {
@@ -47,9 +51,10 @@ cloudEvent("relay", async (event: CloudEvent<PubsubData>) => {
     };
   }
 
-  console.log(`Relay request received for ${rateFeedName} (${relayerAddress})`);
+  const logger = getLogger(rateFeedName);
+  logger.info(`Relay request received for ${relayerAddress}`);
 
-  const ok = await relay(relayerAddress);
+  const ok = await relay(relayerAddress, rateFeedName);
   if (!ok) {
     return { status: "error", message: "Relay failed" };
   }
