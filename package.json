@@ -12,6 +12,8 @@
     "deploy:via:gcloud": "./deploy-via-gcloud.sh",
     "deploy:via:terraform": "npm run deploy:via:tf",
     "deploy:via:tf": "terraform -chdir=infra apply",
+    "destroy:prod": "terraform -chdir=infra workspace select prod && terraform -chdir=infra destroy",
+    "destroy:staging": "./destroy-project.sh staging",
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'npm run build && npm run start'",
     "gcp-build": "npm run build",
     "generate:env": "terraform -chdir=infra apply -target=local_file.env_file",
