@@ -25,6 +25,8 @@
     "logs:prod": "npm run logs:function:prod",
     "logs:staging": "npm run logs:function:staging",
     "logs:url": "npm run logs:function:url",
+    "plan:prod": "terraform -chdir=infra workspace select prod && terraform -chdir=infra plan",
+    "plan:staging": "terraform -chdir=infra workspace select staging && terraform -chdir=infra plan",
     "prestart": "npm run build",
     "start": "NODE_ENV=development functions-framework --target=relay",
     "test": "npm run test:local",
