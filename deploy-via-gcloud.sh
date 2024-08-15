@@ -3,6 +3,17 @@ set -e          # Fail on any error
 set -o pipefail # Ensure piped commands propagate exit codes properly
 set -u          # Treat unset variables as an error when substituting
 
+# Check if environment parameter is provided
+if [[ $# -ne 1 ]]; then
+	echo "Usage: $0 <env>"
+	echo "Example: $0 staging"
+	exit 1
+fi
+env=$1
+
+# Select the correct environment
+terraform -chdir=infra workspace select "${env}"
+
 # Load the project variables
 source ./set-project-vars.sh
 

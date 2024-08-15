@@ -8,9 +8,10 @@
   "scripts": {
     "build": "rimraf dist && tsc",
     "cache:clear": "./set-project-vars.sh --invalidate-cache",
+    "deploy:function:prod": "./deploy-via-gcloud.sh prod",
+    "deploy:function:staging": "./deploy-via-gcloud.sh staging",
     "deploy:prod": "terraform -chdir=infra workspace select prod && terraform -chdir=infra apply",
     "deploy:staging": "terraform -chdir=infra workspace select staging && terraform -chdir=infra apply",
-    "deploy:via:gcloud": "./deploy-via-gcloud.sh",
     "destroy:prod": "terraform -chdir=infra workspace select prod && terraform -chdir=infra destroy",
     "destroy:staging": "./destroy-project.sh staging",
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'npm run build && npm run start'",
