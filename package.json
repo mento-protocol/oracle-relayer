@@ -32,7 +32,8 @@
     "start": "NODE_ENV=development functions-framework --target=relay",
     "test": "npm run test:local",
     "test:local": "./test-local-function.sh",
-    "test:prod": "./test-deployed-function.sh",
+    "test:prod": "./test-deployed-function.sh prod",
+    "test:staging": "./test-deployed-function.sh staging",
     "todo": "git ls-files -c --exclude-standard | grep -v \"package.json\" | xargs grep -n -i --color \"TODO:\\|FIXME:\""
   },
   "dependencies": {
