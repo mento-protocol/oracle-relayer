@@ -1,3 +1,8 @@
+#!/bin/bash
+set -e          # Fail on any error
+set -o pipefail # Ensure piped commands propagate exit codes properly
+set -u          # Treat unset variables as an error when substituting
+
 check_gcloud_login() {
 	echo "🌀 Checking gcloud login..."
 	# Check if there's an active account
