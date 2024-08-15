@@ -7,7 +7,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "rimraf dist && tsc",
-    "cache:clear": "./set-project-vars.sh --no-cache",
+    "cache:clear": "./set-project-vars.sh --invalidate-cache",
     "deploy:prod": "terraform -chdir=infra workspace select prod && terraform -chdir=infra apply",
     "deploy:staging": "terraform -chdir=infra workspace select staging && terraform -chdir=infra apply",
     "deploy:via:gcloud": "./deploy-via-gcloud.sh",
