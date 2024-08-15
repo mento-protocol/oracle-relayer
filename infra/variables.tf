@@ -1,3 +1,9 @@
+variable "terraform_service_account" {
+  type        = string
+  description = "Service account of our Terraform GCP Project which can be impersonated to create and destroy resources in this project"
+  default     = "org-terraform@mento-terraform-seed-ffac.iam.gserviceaccount.com"
+}
+
 variable "project_name" {
   type        = string
   description = "Google Cloud Project Name of the Oracle Relayer Project"
@@ -30,9 +36,9 @@ variable "relayer_pk" {
   sensitive = true
 }
 
-#####################################################################################
-# The below are mainly kept in vars so we can read them easier in the shell scripts #
-#####################################################################################
+###################################################################################
+# The below are only kept in vars so we can read them easier in the shell scripts #
+###################################################################################
 variable "function_name" {
   type    = string
   default = "relay-function"
