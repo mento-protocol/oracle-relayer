@@ -120,7 +120,7 @@ destroyed, the terraform state will be gone and the destroy command will fail an
    - You might run into permission issues here, especially around deleting the associated billing account resources
    - I didn't have time to figure out the minimum set of permissions required to delete this project so the easiest would be to let an organization owner (i.e. Bogdan) run this with full permissions
 
-# TODO: document these better
+## TODO: document these better
 
 - `./set-up-terraform.sh`
 - Hard requirement on seed project
