@@ -106,7 +106,7 @@ export default async function relay(
         }
         default: {
           logger.error(
-            `Relay failed with an unknown error type: ${errName} - ${revertError.shortMessage}`,
+            `Relay failed. Unknown error type: ${errName} - ${revertError.shortMessage}`,
           );
           break;
         }
