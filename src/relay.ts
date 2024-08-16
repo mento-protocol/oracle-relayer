@@ -99,7 +99,7 @@ export default async function relay(
         }
         case "Error": {
           logger.error(
-            "Relay failed because of a generic revert:",
+            "Relay failed. Contract reverted with:",
             revertError.reason,
           );
           break;
