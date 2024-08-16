@@ -94,7 +94,7 @@ export default async function relay(
           break;
         }
         case "InvalidPrice": {
-          logger.error("Relay failed because chainlink price is invalid");
+          logger.error("Relay failed. Chainlink price is invalid");
           break;
         }
         case "Error": {
