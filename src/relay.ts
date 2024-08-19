@@ -89,7 +89,7 @@ export default async function relay(
         }
         case "ExpiredTimestamp": {
           logger.warn(
-            "Relay skipped. The current price is too old to be relayed",
+            "Relay not possible. The current price is too old to be relayed",
           );
           break;
         }
