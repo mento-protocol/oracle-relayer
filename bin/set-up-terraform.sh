@@ -52,6 +52,8 @@ set_up_terraform() {
 			echo "✅ Successfully added the Service Account Token Creator role to ${user_account_to_check}"
 		else
 			echo "❌ Error: Failed to add the Service Account Token Creator role to ${user_account_to_check}"
+			echo "You may have to ask a project owner of '${terraform_seed_project_id}' to add the role manually via the following command."
+			echo "gcloud projects add-iam-policy-binding \"${terraform_seed_project_id}\" --member=\"${user_account_to_check}\" --role=\"roles/iam.serviceAccountTokenCreator\""
 			exit 1
 		fi
 		printf "\n"
