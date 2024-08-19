@@ -4,7 +4,8 @@ set -o pipefail # Ensure piped commands propagate exit codes properly
 set -u          # Treat unset variables as an error when substituting
 
 # Load the project variables
-source ./set-project-vars.sh
+script_dir=$(dirname "$0")
+source "${script_dir}/set-project-vars.sh"
 
 # Fetch raw logs
 printf "\n\n"

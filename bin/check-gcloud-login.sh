@@ -3,6 +3,8 @@ set -e          # Fail on any error
 set -o pipefail # Ensure piped commands propagate exit codes properly
 set -u          # Treat unset variables as an error when substituting
 
+# Checks for an active Google Cloud login and application-default credentials.
+# If no active account or valid credentials are found, it prompts the user to log in.
 check_gcloud_login() {
 	echo "🌀 Checking gcloud login..."
 	# Check if there's an active account

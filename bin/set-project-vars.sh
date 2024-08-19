@@ -3,7 +3,8 @@ set -e          # Fail on any error
 set -o pipefail # Ensure piped commands propagate exit codes properly
 set -u          # Treat unset variables as an error when substituting
 
-source ./check-gcloud-login.sh
+script_dir=$(dirname "$0")
+source "${script_dir}/check-gcloud-login.sh"
 
 set_project_id() {
 	printf "Looking up terraform workspace..."
