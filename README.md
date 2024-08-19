@@ -87,6 +87,15 @@
    billing_account      = "<our-billing-account-id>"
    ```
 
+1. Add the relayer account private key from Google Cloud Secret Manager to your local `terraform.tfvars`:
+
+   ```sh
+   # You need the "Secret Manager Secret Accessor" IAM role for this command to succeed
+   echo "\nrelayer_pk = \"$(gcloud secrets versions access latest --secret relayer-private-key)\"" >> terraform.tfvars
+   ```
+
+1. Auto-generate a local `.env` file by running `npm run generate:env`
+
 ## Running and testing the Cloud Function locally
 
 - `npm install`
@@ -151,6 +160,13 @@ You must have the following Google Cloud IAM roles to deploy this project via Te
    ```
 
 1. Run `terraform init` to install the required providers and init a temporary local backend in a `terraform.tfstate` file
+
+1. Add the relayer account private key to your local `terraform.tfvars`. You can either get the existing one by searching for `Oracle Relayer` inside the shared Eng. folder on LastPass, or generate a new one if you wish to rotate the account
+
+   ```sh
+   # This will be stored in Google Secret Manager upon deployment via Terraform
+   echo "relayer_pk = \"<relayer_pk>\"" >> terraform.tfvars
+   ```
 
 1. **Deploy the entire project via `terraform apply`**
 
