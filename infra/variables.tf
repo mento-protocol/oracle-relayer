@@ -1,3 +1,9 @@
+variable "terraform_seed_project_id" {
+  type        = string
+  description = "The GCP Project ID of the Terraform Seed Project housing the terraform state of all projects"
+  default     = "mento-terraform-seed-ffac"
+}
+
 variable "terraform_service_account" {
   type        = string
   description = "Service account of our Terraform GCP Project which can be impersonated to create and destroy resources in this project"
