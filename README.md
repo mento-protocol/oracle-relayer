@@ -1,5 +1,11 @@
 # Oracle Relayer Infra
 
+- [Local Infra Setup (when project is deployed already)](#local-infra-setup-when-project-is-deployed-already)
+- [Debugging Local Problems](#debugging-local-problems)
+- [Running and testing the Cloud Function locally](#running-and-testing-the-cloud-function-locally)
+- [Testing the Deployed Cloud Function](#testing-the-deployed-cloud-function)
+- [Updating the Cloud Function](#updating-the-cloud-function)
+
 ## Local Infra Setup (when project is deployed already)
 
 1. Install the `gcloud` CLI
@@ -74,6 +80,13 @@
    # To fetch secrets, you'll need the `Secret Manager Secret Accessor` IAM role assigned to your Google Cloud Account
    relayer_pk      = "<relayer-private-key>"
    ```
+
+## Debugging Local Problems
+
+For most local `terraform` or `gcloud` problems, your first steps should always be to:
+
+- Clear your cache via `npm run cache:clear`
+- Re-run the Terraform setup script via `./bin/set-up-terraform.sh`
 
 ## Running and testing the Cloud Function locally
 
