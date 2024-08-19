@@ -83,7 +83,7 @@ export default async function relay(
       switch (errName) {
         case "TimestampNotNew": {
           logger.info(
-            "Relay not possible. Price from previous relay is still fresh in SortedOracles",
+            "Relay skipped. Price from previous relay is still fresh in SortedOracles",
           );
           break;
         }
