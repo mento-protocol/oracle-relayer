@@ -20,7 +20,7 @@ deploy_via_gcloud() {
 
 	# Load the project variables
 	script_dir=$(dirname "$0")
-	source "${script_dir}/set-project-vars.sh"
+	source "${script_dir}/get-project-vars.sh"
 
 	# Deploy the Google Cloud Function
 	echo "Deploying to Google Cloud Functions..."

@@ -3,9 +3,6 @@ set -e          # Fail on any error
 set -o pipefail # Ensure piped commands propagate exit codes properly
 set -u          # Treat unset variables as an error when substituting
 
-script_dir=$(dirname "$0")
-source "${script_dir}/check-gcloud-login.sh"
-
 set_project_id() {
 	printf "Looking up terraform workspace..."
 	workspace=$(terraform -chdir=infra workspace show)
@@ -49,7 +46,7 @@ set_project_id() {
 	fi
 
 	# Update the project ID in your .env file so your cloud function points to the correct project when running locally
-	printf "Updating the project ID in your .env file...\n\n"
+	printf "Updating the project ID in your .env file..."
 	# Check if .env file exists
 	if [[ ! -f .env ]]; then
 		# If .env doesn't exist, create it with the initial value
@@ -58,8 +55,7 @@ set_project_id() {
 		# If .env exists, perform the sed replacement
 		sed -i '' "s/^GCP_PROJECT_ID=.*/GCP_PROJECT_ID=${project_id}/" .env
 	fi
-
-	echo "✅ All Done!"
+	printf "✅"
 }
 
 cache_file=".project_vars_cache"
@@ -89,8 +85,8 @@ write_cache() {
 	} >>"${cache_file}"
 }
 
-# Function to fetch and print values
-fetch_values() {
+# Function to load & cache values
+cache_values() {
 	printf "Loading and caching project values...\n\n"
 
 	printf " - Terraform Workspace"
@@ -134,43 +130,39 @@ fetch_values() {
 
 # Function to invalidate cache
 invalidate_cache() {
-	printf "Invalidating cache...\n"
+	printf "Clearing local cache file %s..." "${cache_file}"
 	rm -f "${cache_file}"
-}
+	printf " ✅\n"
 
-# Main script logic
-main() {
-	check_gcloud_login
-
-	printf "Loading current local gcloud project ID: "
+	printf "Loading current local gcloud project ID:"
 	current_local_project_id=$(gcloud config get project)
 	printf ' \033[1m%s\033[0m\n' "${current_local_project_id}"
 
-	printf "Comparing with project ID from terraform state: "
-	# current_tf_state_project_id=$(terraform -chdir=infra state show module.oracle_relayer.module.project-factory.google_project.main | grep project_id | awk '{print $3}' | tr -d '"')
+	printf "Comparing with project ID from terraform state:"
 	current_tf_state_project_id=$(terraform -chdir=infra state show module.oracle_relayer.module.project-factory.google_project.main 2>/dev/null | grep project_id | awk '{print $3}' | tr -d '"' || echo "Not found")
-	printf ' \033[1m%s\033[0m\n\n' "${current_tf_state_project_id}"
+	printf ' \033[1m%s\033[0m\n' "${current_tf_state_project_id}"
 
 	if [[ ${current_local_project_id} != "${current_tf_state_project_id}" ]]; then
 		printf '️\n🚨 Your local gcloud is set to the wrong project: \033[1m%s\033[0m 🚨\n' "${current_local_project_id}"
-		printf "\nTrying to set the correct project...\n\n"
+		printf "\nTrying to set the correct project ID...\n\n"
 		set_project_id
-		invalidate_cache
-		fetch_values
 		printf "\n\n"
-		return 0
 	else
 		project_id="${current_local_project_id}"
 	fi
 
+	cache_values
+}
+
+# Main script logic
+main() {
 	if [[ ${1-} == "--invalidate-cache" ]]; then
 		invalidate_cache
+		exit 0
 	fi
 
-	set +e # Disable exit on error
 	load_cache
 	cache_loaded=$?
-	set +e # Re-enable exit on error
 
 	if [[ ${cache_loaded} -eq 0 ]]; then
 		printf "Using cached values from %s:\n" "${cache_file}"
@@ -183,7 +175,7 @@ main() {
 		printf " - Pubsub Topic: \033[1m%s\033[0m\n" "${topic_name}"
 		printf " - Scheduler Job: \033[1m%s\033[0m\n" "${scheduler_job_name}"
 	else
-		fetch_values
+		cache_values
 	fi
 }
 

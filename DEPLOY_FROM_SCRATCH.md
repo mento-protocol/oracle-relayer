@@ -38,7 +38,7 @@ You must have the following Google Cloud IAM roles to deploy this project via Te
 
    ```sh
    # This script will also cache some gcloud values into a local file which speeds up tasks like `npm run logs`
-   ./set-project-vars.sh
+   ./bin/get-project-vars.sh
    ```
 
 1. Check that everything worked as expected

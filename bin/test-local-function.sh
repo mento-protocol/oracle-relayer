@@ -7,7 +7,7 @@ set -u          # Treat unset variables as an error when substituting
 test_local_function() {
 	# Load the project variables
 	script_dir=$(dirname "$0")
-	source "${script_dir}/set-project-vars.sh"
+	source "${script_dir}/get-project-vars.sh"
 
 	printf "\n"
 

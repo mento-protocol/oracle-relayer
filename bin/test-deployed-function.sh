@@ -18,7 +18,7 @@ test_deployed_function() {
 
 	# Load the project variables
 	script_dir=$(dirname "$0")
-	source "${script_dir}/set-project-vars.sh"
+	source "${script_dir}/get-project-vars.sh"
 
 	echo "🌀 Emitting a Pubsub event to trigger the function..."
 	printf "\n"

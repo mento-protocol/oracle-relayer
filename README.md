@@ -22,6 +22,15 @@
 
    Optionally, you can also install the [Trunk VS Code Extension](https://marketplace.visualstudio.com/items?itemName=Trunk.io)
 
+1. Install `jq` (used in a few shell scripts)
+
+   ```sh
+   # On macOS
+   brew install jq
+
+   # For other systems, see https://jqlang.github.io/jq/
+   ```
+
 1. Install Terraform
 
    ```sh
@@ -32,26 +41,17 @@
    # For other systems, see https://developer.hashicorp.com/terraform/install
    ```
 
-1. Install `jq` (used in a few shell scripts)
-
-   ```sh
-   # On macOS
-   brew install jq
-
-   # For other systems, see https://jqlang.github.io/jq/
-   ```
-
 1. Run terraform setup script
 
    ```sh
-   # This will provision terraform providers, modules, and workspaces
-   ./set-up-terraform.sh
+   # This will check required permissions, provision terraform providers, modules, and workspaces
+   ./bin/set-up-terraform.sh
    ```
 
 1. Set your local `gcloud` project:
 
    ```sh
-   ./set-project-vars.sh
+   ./bin/set-project-vars.sh
    ```
 
 1. Create `infra/terraform.tfvars` file. This is like `.env` for Terraform:

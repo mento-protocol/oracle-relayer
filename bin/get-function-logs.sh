@@ -18,7 +18,7 @@ get_function_logs() {
 
 	# Load the project variables
 	script_dir=$(dirname "$0")
-	source "${script_dir}/set-project-vars.sh"
+	source "${script_dir}/get-project-vars.sh"
 
 	# Fetch raw logs
 	raw_logs=$(gcloud logging read "resource.labels.function_name=${function_name}" \

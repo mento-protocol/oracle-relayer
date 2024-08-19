@@ -5,7 +5,7 @@ set -u          # Treat unset variables as an error when substituting
 
 # Load the project variables
 script_dir=$(dirname "$0")
-source "${script_dir}/set-project-vars.sh"
+source "${script_dir}/get-project-vars.sh"
 
 # Fetch raw logs
 printf "\n\n"

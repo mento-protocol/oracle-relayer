@@ -6,6 +6,7 @@ set -u          # Treat unset variables as an error when substituting
 # Checks for an active Google Cloud login and application-default credentials.
 # If no active account or valid credentials are found, it prompts the user to log in.
 check_gcloud_login() {
+	printf "\n"
 	echo "🌀 Checking gcloud login..."
 	# Check if there's an active account
 	if ! gcloud auth list --filter=status:ACTIVE --format="value(account)" | grep -q .; then
@@ -13,7 +14,7 @@ check_gcloud_login() {
 		gcloud auth login
 		echo "✅ Successfully logged in to gcloud"
 	else
-		echo "ℹ️  Already logged in to Google Cloud."
+		echo "✅ Already logged in to Google Cloud."
 	fi
 	printf "\n"
 
@@ -23,7 +24,7 @@ check_gcloud_login() {
 		gcloud auth application-default login
 		echo "✅ Successfully logged in to gcloud"
 	else
-		echo "ℹ️  Already logged in with valid application-default credentials."
+		echo "✅ Already logged in with valid application-default credentials."
 	fi
 	printf "\n"
 }
