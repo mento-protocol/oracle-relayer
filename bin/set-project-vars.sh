@@ -11,6 +11,13 @@ set_project_id() {
 	workspace=$(terraform -chdir=infra workspace show)
 	printf ' \033[1m%s\033[0m\n' "${workspace}"
 
+	# Ensure workspace is either 'staging' or 'prod'
+	if [[ ${workspace} != "staging" && ${workspace} != "prod" ]]; then
+		echo "Error: Terraform Workspace must be either 'staging' or 'prod'."
+		echo "Please run 'terraform workspace select <workspace>' in ./infra to switch workspaces."
+		exit 1
+	fi
+
 	printf "Looking up project name in variables.tf..."
 	project_name=$(awk '/variable "project_name"/{f=1} f==1&&/default/{print $3; exit}' ./infra/variables.tf | tr -d '",')-${workspace}
 	printf ' \033[1m%s\033[0m\n' "${project_name}"
