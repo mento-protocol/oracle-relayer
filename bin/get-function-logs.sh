@@ -14,11 +14,21 @@ get_function_logs() {
 	fi
 	env=$1
 
+	# Get the current Terraform workspace
+	current_workspace=$(terraform -chdir=infra workspace show)
+
+	# Select the desired workspace
 	terraform -chdir=infra workspace select "${env}"
+
+	# Determine if cache should be invalidated
+	invalidate_cache=""
+	if [[ ${current_workspace} != "${env}" ]]; then
+		invalidate_cache="--invalidate-cache"
+	fi
 
 	# Load the project variables
 	script_dir=$(dirname "$0")
-	source "${script_dir}/get-project-vars.sh"
+	source "${script_dir}/get-project-vars.sh" "${invalidate_cache}"
 
 	# Fetch raw logs
 	raw_logs=$(gcloud logging read "resource.labels.function_name=${function_name}" \

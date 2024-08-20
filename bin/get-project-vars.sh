@@ -159,7 +159,7 @@ invalidate_cache() {
 main() {
 	if [[ ${1-} == "--invalidate-cache" ]]; then
 		invalidate_cache
-		exit 0
+		return 0
 	fi
 
 	load_cache
