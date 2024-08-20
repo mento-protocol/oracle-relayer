@@ -44,6 +44,18 @@ export default async function relay(
   const publicClient = getPublicClient();
   const wallet = await getWalletClient();
 
+  // Check if the address is a contract
+  const contractCode = await publicClient.getCode({
+    address: relayerAddress as Address,
+  });
+
+  if (!contractCode || contractCode === "0x") {
+    logger.error(
+      `Relay failed. Relayer address ${relayerAddress} is not a contract.`,
+    );
+    return false; // Not a contract
+  }
+
   const contract = getContract({
     address: relayerAddress as Address,
     abi: relayerAbi,
