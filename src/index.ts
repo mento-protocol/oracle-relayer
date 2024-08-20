@@ -2,21 +2,7 @@ import { cloudEvent, CloudEvent } from "@google-cloud/functions-framework";
 
 import getLogger from "./logger";
 import relay from "./relay";
-
-interface PubsubData {
-  subscription: string;
-  message: {
-    messageId: string;
-    publishTime: string;
-    data: string;
-    attributes?: Record<string, string>;
-  };
-}
-
-interface RelayRequested {
-  rate_feed_name: string;
-  relayer_address: string;
-}
+import type { PubsubData, RelayRequested } from "./types";
 
 cloudEvent("relay", async (event: CloudEvent<PubsubData>) => {
   // For better log readability
