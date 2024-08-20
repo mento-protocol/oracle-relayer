@@ -33,6 +33,20 @@ variable "relayer_pk" {
 #####################################################################################
 # The below are mainly kept in vars so we can read them easier in the shell scripts #
 #####################################################################################
+variable "terraform_service_account" {
+  type        = string
+  description = "Service account of our Terraform GCP Project which can be impersonated to create and destroy resources in this project"
+  default     = "org-terraform@mento-terraform-seed-ffac.iam.gserviceaccount.com"
+}
+
+# For consistency we also keep this variable in here, although it's not used in the Terraform code (only in the shell scripts)
+# trunk-ignore(tflint/terraform_unused_declarations)
+variable "terraform_seed_project_id" {
+  type        = string
+  description = "The GCP Project ID of the Terraform Seed Project housing the terraform state of all projects"
+  default     = "mento-terraform-seed-ffac"
+}
+
 variable "function_name" {
   type    = string
   default = "relay-function"

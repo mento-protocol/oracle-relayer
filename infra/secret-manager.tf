@@ -1,6 +1,6 @@
 resource "google_secret_manager_secret" "relayer_pk" {
-  project   = module.project-factory.project_id
-  secret_id = var.relayer_pk_secret_id
+  project   = module.oracle_relayer.project_id
+  secret_id = "${var.relayer_pk_secret_id}-${terraform.workspace}"
 
   replication {
     auto {}

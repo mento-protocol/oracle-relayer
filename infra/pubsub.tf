@@ -1,7 +1,7 @@
 # Create the Pub/Sub schema
 resource "google_pubsub_schema" "relay_requested_schema" {
-  project    = module.project-factory.project_id
-  name       = "relay-requested-schema"
+  project    = module.oracle_relayer.project_id
+  name       = "relay-requested-schema-${terraform.workspace}"
   type       = "AVRO"
   definition = <<-EOF
 {
@@ -19,13 +19,15 @@ resource "google_pubsub_schema" "relay_requested_schema" {
   ]
 }
 EOF
+
+  depends_on = [module.oracle_relayer]
 }
 
 # Create the Pub/Sub topic
 resource "google_pubsub_topic" "relay_requested" {
   # checkov:skip=CKV_GCP_83:The Pub/Sub messages do not contain sensitive data
-  project = module.project-factory.project_id
-  name    = var.pubsub_topic
+  project = module.oracle_relayer.project_id
+  name    = "${var.pubsub_topic}-${terraform.workspace}"
 
   labels = {
     rate_feed_name  = "required"
@@ -38,4 +40,6 @@ resource "google_pubsub_topic" "relay_requested" {
     schema   = google_pubsub_schema.relay_requested_schema.id
     encoding = "JSON"
   }
+
+  depends_on = [module.oracle_relayer]
 }

@@ -1,0 +1,8 @@
+{
+  "staging": {
+    "php_usd": "0x3005a33a9782f4c1ccfa0ffdb87a034b95b7ad90"
+  },
+  "prod": {
+    "php_usd": "0x3005a33a9782f4c1ccfa0ffdb87a034b95b7ad90"
+  }
+}
