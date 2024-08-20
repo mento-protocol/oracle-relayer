@@ -74,6 +74,7 @@ load_cache() {
 # Function to write values to cache
 write_cache() {
 	{
+		echo "workspace=${workspace}"
 		echo "project_id=${project_id}"
 		echo "project_name=${project_name}"
 		echo "region=${region}"
@@ -118,7 +119,7 @@ cache_values() {
 	printf ' \033[1m%s\033[0m\n' "${topic_name}"
 
 	printf " - Scheduler Job:"
-	scheduler_job_name=$(awk '/variable "scheduler_job_name"/{f=1} f==1&&/default/{print $3; exit}' ./infra/variables.tf | tr -d '",')-${workspace}
+	scheduler_job_name=$(awk '/variable "scheduler_job_name"/{f=1} f==1&&/default/{print $3; exit}' ./infra/variables.tf | tr -d '",')
 	printf ' \033[1m%s\033[0m\n' "${scheduler_job_name}"
 
 	printf "\nCaching values in"
