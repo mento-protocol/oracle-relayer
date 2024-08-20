@@ -1,8 +1,11 @@
 import { cloudEvent, CloudEvent } from "@google-cloud/functions-framework";
-
+import config from "./config";
 import getLogger from "./logger";
 import relay from "./relay";
 import type { PubsubData, RelayRequested } from "./types";
+
+const isMainnet = config.NODE_ENV !== "development";
+const network = isMainnet ? "Celo" : "Alfajores";
 
 cloudEvent("relay", async (event: CloudEvent<PubsubData>) => {
   // For better log readability
@@ -37,10 +40,10 @@ cloudEvent("relay", async (event: CloudEvent<PubsubData>) => {
     };
   }
 
-  const logger = getLogger(rateFeedName);
+  const logger = getLogger(rateFeedName, network);
   logger.info(`Relay request received for ${relayerAddress}`);
 
-  const ok = await relay(relayerAddress, rateFeedName);
+  const ok = await relay(relayerAddress, rateFeedName, network);
   if (!ok) {
     return { status: "error", message: "Relay failed" };
   }
