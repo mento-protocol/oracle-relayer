@@ -1,23 +1,24 @@
 import {
   Address,
   BaseError,
+  ContractFunctionRevertedError,
   createPublicClient,
   createWalletClient,
-  ContractFunctionRevertedError,
   getContract,
   http,
   WalletClient,
 } from "viem";
-import { celo, celoAlfajores } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
+import { celo, celoAlfajores } from "viem/chains";
 
 import config from "./config";
-import getLogger from "./logger";
 import getSecret from "./get-secret";
+import getLogger from "./logger";
 import { relayerAbi } from "./relayer-abi";
 
+const isMainnet = config.NODE_ENV !== "development";
+
 function getPublicClient() {
-  const isMainnet = process.env.NODE_ENV !== "development";
   return createPublicClient({
     chain: isMainnet ? celo : celoAlfajores,
     transport: http(),
@@ -25,7 +26,6 @@ function getPublicClient() {
 }
 
 async function getWalletClient(): Promise<WalletClient> {
-  const isMainnet = process.env.NODE_ENV !== "development";
   const pk = await getSecret(config.RELAYER_PK_SECRET_ID);
 
   return createWalletClient({
@@ -38,10 +38,23 @@ async function getWalletClient(): Promise<WalletClient> {
 export default async function relay(
   relayerAddress: string,
   rateFeedName: string,
+  network: string,
 ): Promise<boolean> {
-  const logger = getLogger(rateFeedName);
+  const logger = getLogger(rateFeedName, network);
   const publicClient = getPublicClient();
   const wallet = await getWalletClient();
+
+  // Check if the address is a contract
+  const contractCode = await publicClient.getCode({
+    address: relayerAddress as Address,
+  });
+
+  if (!contractCode || contractCode === "0x") {
+    logger.error(
+      `Relay failed. Relayer address ${relayerAddress} is not a contract.`,
+    );
+    return false; // Not a contract
+  }
 
   const contract = getContract({
     address: relayerAddress as Address,
