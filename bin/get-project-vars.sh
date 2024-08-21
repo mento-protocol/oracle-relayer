@@ -167,6 +167,7 @@ main() {
 
 	if [[ ${cache_loaded} -eq 0 ]]; then
 		printf "Using cached values from %s:\n" "${cache_file}"
+		printf " - Environment: \033[1m%s\033[0m\n" "${workspace}"
 		printf " - Project ID: \033[1m%s\033[0m\n" "${project_id}"
 		printf " - Project Name: \033[1m%s\033[0m\n" "${project_name}"
 		printf " - Region: \033[1m%s\033[0m\n" "${region}"
