@@ -129,7 +129,7 @@ async function isContract(address: string): Promise<boolean> {
     address: address as Address,
   });
 
-  const isContract = !!contractCode && contractCode !== "0x";
+  const isContract = !!contractCode;
   contractCodeCache.set(address, isContract);
   return isContract;
 }
