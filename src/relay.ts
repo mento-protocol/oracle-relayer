@@ -1,12 +1,11 @@
+import type { Address, PublicClient, WalletClient } from "viem";
 import {
-  Address,
   BaseError,
   ContractFunctionRevertedError,
   createPublicClient,
   createWalletClient,
   getContract,
   http,
-  WalletClient,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { celo, celoAlfajores } from "viem/chains";
@@ -18,22 +17,10 @@ import { relayerAbi } from "./relayer-abi";
 
 const isMainnet = config.NODE_ENV !== "development";
 
-function getPublicClient() {
-  return createPublicClient({
-    chain: isMainnet ? celo : celoAlfajores,
-    transport: http(),
-  });
-}
-
-async function getWalletClient(): Promise<WalletClient> {
-  const pk = await getSecret(config.RELAYER_PK_SECRET_ID);
-
-  return createWalletClient({
-    account: privateKeyToAccount(pk as Address),
-    chain: isMainnet ? celo : celoAlfajores,
-    transport: http(),
-  });
-}
+// Re-use clients across function invocations to save on initialization time and memory
+let publicClient: PublicClient;
+let walletClient: WalletClient;
+const contractCodeCache = new Map<string, boolean>();
 
 export default async function relay(
   relayerAddress: string,
@@ -41,20 +28,17 @@ export default async function relay(
   network: string,
 ): Promise<boolean> {
   const logger = getLogger(rateFeedName, network);
-  const publicClient = getPublicClient();
-  const wallet = await getWalletClient();
+  logger.info(`Relay request received for ${relayerAddress}`);
 
-  // Check if the address is a contract
-  const contractCode = await publicClient.getCode({
-    address: relayerAddress as Address,
-  });
-
-  if (!contractCode || contractCode === "0x") {
+  if (!(await isContract(relayerAddress))) {
     logger.error(
       `Relay failed. Relayer address ${relayerAddress} is not a contract.`,
     );
-    return false; // Not a contract
+    return false;
   }
+
+  const publicClient = getOrCreatePublicClient();
+  const wallet = await getOrCreateWalletClient();
 
   const contract = getContract({
     address: relayerAddress as Address,
@@ -89,41 +73,7 @@ export default async function relay(
       (err) => err instanceof ContractFunctionRevertedError,
     );
     if (revertError instanceof ContractFunctionRevertedError) {
-      // If the error was a revert from the contract, it should fall into one of two types:
-      // 1. A custom error defined in the relayer contract, i.e. InvalidPrice, TimestampNotNew, etc.
-      // 2. An error from a require statement, in which case we try to extract the reason
-      const errName = revertError.data?.errorName ?? "";
-      switch (errName) {
-        case "TimestampNotNew": {
-          logger.info(
-            "Relay skipped. Price from previous relay is still fresh in SortedOracles",
-          );
-          break;
-        }
-        case "ExpiredTimestamp": {
-          logger.warn(
-            "Relay not possible. The current price is too old to be relayed",
-          );
-          break;
-        }
-        case "InvalidPrice": {
-          logger.error("Relay failed. Chainlink price is invalid");
-          break;
-        }
-        case "Error": {
-          logger.error(
-            "Relay failed. Contract reverted with:",
-            revertError.reason,
-          );
-          break;
-        }
-        default: {
-          logger.error(
-            `Relay failed. Unknown error type: ${errName} - ${revertError.shortMessage}`,
-          );
-          break;
-        }
-      }
+      handleContractFunctionRevertError(revertError, logger);
       return false;
     }
 
@@ -133,5 +83,93 @@ export default async function relay(
     logger.error(`Relay failed with a non-revert error: ${err.shortMessage}`);
 
     return false;
+  }
+}
+
+/**
+ * Either returns an existing cached public client or creates a new one if it doesn't exist
+ */
+function getOrCreatePublicClient(): PublicClient {
+  // This value is NOT always falsy, as it is set in the first call to this function and will be true in subsequent calls
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (!publicClient) {
+    publicClient = createPublicClient({
+      chain: isMainnet ? celo : celoAlfajores,
+      transport: http(),
+      // NOTE: viem's typescript support is super annoying, couldn't figure out how to make this work without the cast
+    }) as unknown as PublicClient;
+  }
+  return publicClient;
+}
+
+/**
+ * Either returns an existing cached wallet client or creates a new one if it doesn't exist
+ */
+async function getOrCreateWalletClient() {
+  // This value is NOT always falsy, as it is set in the first call to this function and will be true in subsequent calls
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (!walletClient) {
+    const pk = await getSecret(config.RELAYER_PK_SECRET_ID);
+    walletClient = createWalletClient({
+      account: privateKeyToAccount(pk as Address),
+      chain: isMainnet ? celo : celoAlfajores,
+      transport: http(),
+    });
+  }
+  return walletClient;
+}
+
+async function isContract(address: string): Promise<boolean> {
+  if (contractCodeCache.has(address)) {
+    return contractCodeCache.get(address) ?? false;
+  }
+
+  const publicClient = getOrCreatePublicClient();
+  const contractCode = await publicClient.getCode({
+    address: address as Address,
+  });
+
+  const isContract = !!contractCode && contractCode !== "0x";
+  contractCodeCache.set(address, isContract);
+  return isContract;
+}
+
+/**
+ * If the error was a revert from the contract, it should fall into one of two types:
+ *   1. A custom error defined in the relayer contract, i.e. InvalidPrice, TimestampNotNew, etc.
+ *   2. An error from a require statement, in which case we try to extract the reason
+ */
+function handleContractFunctionRevertError(
+  revertError: ContractFunctionRevertedError,
+  logger: ReturnType<typeof getLogger>,
+) {
+  const errName = revertError.data?.errorName ?? "";
+  switch (errName) {
+    case "TimestampNotNew": {
+      logger.info(
+        "Relay skipped. Price from previous relay is still fresh in SortedOracles",
+      );
+      break;
+    }
+    case "ExpiredTimestamp": {
+      logger.warn(
+        "Relay not possible. The current price is too old to be relayed",
+      );
+      break;
+    }
+    case "InvalidPrice": {
+      logger.error("Relay failed. Chainlink price is invalid");
+      break;
+    }
+    case "Error": {
+      logger.error("Relay failed. Contract reverted with:", revertError.reason);
+      break;
+    }
+    default: {
+      logger.error(
+        `Relay failed. Unknown error type: ${errName} - ${revertError.shortMessage}`,
+      );
+      break;
+    }
   }
 }

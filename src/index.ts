@@ -1,6 +1,5 @@
 import { cloudEvent, CloudEvent } from "@google-cloud/functions-framework";
 import config from "./config";
-import getLogger from "./logger";
 import relay from "./relay";
 import type { PubsubData, RelayRequested } from "./types";
 
@@ -39,9 +38,6 @@ cloudEvent("relay", async (event: CloudEvent<PubsubData>) => {
       message: `Relayer address not found in event data: ${JSON.stringify(parsedEventData, null, 4)}`,
     };
   }
-
-  const logger = getLogger(rateFeedName, network);
-  logger.info(`Relay request received for ${relayerAddress}`);
 
   const ok = await relay(relayerAddress, rateFeedName, network);
   if (!ok) {
