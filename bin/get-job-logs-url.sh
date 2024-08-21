@@ -45,16 +45,21 @@ check_if_job_exists() {
 	fi
 }
 
-# Check if workspace argument is provided
-if [[ $# -ne 1 ]]; then
-	usage
-fi
+get_job_logs_url() {
+	# Check if rate feed description argument is provided
+	if [[ $# -ne 1 ]]; then
+		usage
+	fi
 
-rate_feed_description="$1"
-validate_rate_feed_description "${rate_feed_description}"
-scheduler_job_id=$(transform_to_scheduler_id "${rate_feed_description}")
-check_if_job_exists "${scheduler_job_id}"
+	rate_feed_description="$1"
+	validate_rate_feed_description "${rate_feed_description}"
+	scheduler_job_id=$(transform_to_scheduler_id "${rate_feed_description}")
+	check_if_job_exists "${scheduler_job_id}"
 
-# Generate the URL for the logs
-url="https://console.cloud.google.com/logs/query;query=resource.type%3D%22cloud_scheduler_job%22%20AND%20resource.labels.job_id%3D%22${scheduler_job_id}%22%20AND%20resource.labels.location%3D%22${region}%22?project=${project_id}"
-printf '\n\033[1m%s\033[0m\n' "${url}"
+	# Generate the URL for the logs
+	url="https://console.cloud.google.com/logs/query;query=resource.type%3D%22cloud_scheduler_job%22%20AND%20resource.labels.job_id%3D%22${scheduler_job_id}%22%20AND%20resource.labels.location%3D%22${region}%22?project=${project_id}"
+	printf '\n\033[1m%s\033[0m\n' "${url}"
+
+}
+
+get_job_logs_url "$@"
