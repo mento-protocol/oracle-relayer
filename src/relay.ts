@@ -129,6 +129,8 @@ async function isContract(address: string): Promise<boolean> {
     address: address as Address,
   });
 
+  // Viem's getCode transforms the "0x" returned by the raw eth_getCode RPC call to undefined automatically:
+  // https://github.com/wevm/viem/blob/5f6009360eaa41caf7318deb832dae7484190b5b/src/actions/public/getCode.ts#L71
   const isContract = !!contractCode;
   contractCodeCache.set(address, isContract);
   return isContract;
