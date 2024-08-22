@@ -6,8 +6,8 @@ import getSecret from "./get-secret";
 
 async function main() {
   if (process.argv.length < 3) {
-    console.log("Usage: npm run get:relayer:address -- <ratefeed>");
-    console.log("e.g. npm run get:relayer:address -- PHP/USD");
+    console.log("Usage: npm run get:relayer:signer -- <ratefeed>");
+    console.log("e.g. npm run get:relayer:signer -- PHP/USD");
     process.exit(1);
   }
 
