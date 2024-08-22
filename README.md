@@ -77,6 +77,7 @@
    billing_account = "<our-billing-account-id>"
 
    # Get it via `gcloud secrets versions access latest --secret relayer-mnemonic-staging`
+   # Note that the mnemonic is the same for both the staging and prod environments.
    # To fetch secrets, you'll need the `Secret Manager Secret Accessor` IAM role assigned to your Google Cloud Account
    relayer_mnemonic      = "<relayer-mnemonic>"
    ```
