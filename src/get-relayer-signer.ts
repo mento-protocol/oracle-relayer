@@ -16,7 +16,7 @@ async function main() {
   try {
     const mnemonic = await getSecret(config.RELAYER_MNEMONIC_SECRET_ID);
     const account: Account = deriveRelayerAccount(mnemonic, ratefeed);
-    console.log(`Derived address for ${ratefeed}: ${account.address}`);
+    console.log(`Derived signer account for ${ratefeed}: ${account.address}`);
   } catch (error) {
     console.error("Error deriving account:", error);
     process.exit(1);
