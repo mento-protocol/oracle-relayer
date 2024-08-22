@@ -19,6 +19,7 @@ export function deriveRelayerAccount(
     .digest("hex")
     .slice(0, 8);
   // Index must be between 0 and 2^31 - 1 for non-hardened keys (BIP32)
+  // See https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki#extended-keys
   const accountIndex = parseInt(hash, 16) % 2147483648;
 
   return mnemonicToAccount(mnemonic, { accountIndex });
