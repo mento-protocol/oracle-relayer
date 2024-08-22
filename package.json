@@ -17,6 +17,7 @@
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'npm run build && npm run start'",
     "gcp-build": "npm run build",
     "generate:env": "terraform -chdir=infra apply -target=local_file.env_file",
+    "get:relayer:address": "NODE_ENV=development ts-node ./src/get-relayer-address.ts",
     "logs": "npm run logs:function:staging",
     "logs:function:prod": "./bin/get-function-logs.sh prod",
     "logs:function:staging": "./bin/get-function-logs.sh staging",
