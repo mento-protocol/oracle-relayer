@@ -20,12 +20,12 @@ variable "billing_account" {
   type = string
 }
 
-variable "relayer_pk_secret_id" {
+variable "relayer_mnemonic_secret_id" {
   type    = string
-  default = "relayer-private-key"
+  default = "relayer-mnemonic"
 }
 
-variable "relayer_pk" {
+variable "relayer_mnemonic" {
   type      = string
   sensitive = true
 }
