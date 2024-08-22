@@ -3,16 +3,16 @@ import { JSONSchemaType, envSchema } from "env-schema";
 export interface Env {
   GCP_PROJECT_ID: string;
   NODE_ENV: string;
-  RELAYER_PK_SECRET_ID: string;
+  RELAYER_MNEMONIC_SECRET_ID: string;
 }
 
 const schema: JSONSchemaType<Env> = {
   type: "object",
-  required: ["GCP_PROJECT_ID", "NODE_ENV", "RELAYER_PK_SECRET_ID"],
+  required: ["GCP_PROJECT_ID", "NODE_ENV", "RELAYER_MNEMONIC_SECRET_ID"],
   properties: {
     GCP_PROJECT_ID: { type: "string" },
     NODE_ENV: { type: "string" },
-    RELAYER_PK_SECRET_ID: { type: "string" },
+    RELAYER_MNEMONIC_SECRET_ID: { type: "string" },
   },
 };
 

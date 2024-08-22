@@ -7,10 +7,10 @@ import {
   getContract,
   http,
 } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
 import { celo, celoAlfajores } from "viem/chains";
 
 import config from "./config";
+import { deriveRelayerAccount } from "./utils";
 import getSecret from "./get-secret";
 import getLogger from "./logger";
 import { relayerAbi } from "./relayer-abi";
@@ -38,7 +38,7 @@ export default async function relay(
   }
 
   const publicClient = getOrCreatePublicClient();
-  const wallet = await getOrCreateWalletClient();
+  const wallet = await getOrCreateWalletClient(rateFeedName);
 
   const contract = getContract({
     address: relayerAddress as Address,
@@ -105,13 +105,13 @@ function getOrCreatePublicClient(): PublicClient {
 /**
  * Either returns an existing cached wallet client or creates a new one if it doesn't exist
  */
-async function getOrCreateWalletClient() {
+async function getOrCreateWalletClient(rateFeedName: string) {
   // This value is NOT always falsy, as it is set in the first call to this function and will be true in subsequent calls
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!walletClient) {
-    const pk = await getSecret(config.RELAYER_PK_SECRET_ID);
+    const mnemonic = await getSecret(config.RELAYER_MNEMONIC_SECRET_ID);
     walletClient = createWalletClient({
-      account: privateKeyToAccount(pk as Address),
+      account: deriveRelayerAccount(mnemonic, rateFeedName),
       chain: isMainnet ? celo : celoAlfajores,
       transport: http(),
     });
