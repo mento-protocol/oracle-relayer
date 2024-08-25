@@ -68,9 +68,7 @@ For most problems, you'll likely want to check the cloud function logs first.
 
 ## Teardown
 
+Note: You might run into permission issues here, especially around deleting the associated billing account resources. I didn't have time to figure out the minimum set of permissions required to delete this project so the easiest would be to let an organization owner (i.e. Bogdan) run this with full permissions if you face any issues.
+
 1. Run `npm run destroy:staging` to delete the entire staging environment from google cloud
-   - You might run into permission issues here, especially around deleting the associated billing account resources
-   - I didn't have time to figure out the minimum set of permissions required to delete this project so the easiest would be to let an organization owner (i.e. Bogdan) run this with full permissions if you face any issues
 1. Run `npm run destroy:prod` to delete the entire production environment from google cloud
-   - You might run into permission issues here, especially around deleting the associated billing account resources
-   - I didn't have time to figure out the minimum set of permissions required to delete this project so the easiest would be to let an organization owner (i.e. Bogdan) run this with full permissions if you face any issues
