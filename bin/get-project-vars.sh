@@ -162,8 +162,10 @@ main() {
 		return 0
 	fi
 
+	set +e
 	load_cache
 	cache_loaded=$?
+	set -e
 
 	if [[ ${cache_loaded} -eq 0 ]]; then
 		printf "Using cached values from %s:\n" "${cache_file}"
@@ -177,6 +179,8 @@ main() {
 		printf " - Pubsub Topic: \033[1m%s\033[0m\n" "${topic_name}"
 		printf " - Scheduler Job: \033[1m%s\033[0m\n" "${scheduler_job_name}"
 	else
+		printf "⚠️ No cache found. Setting project Id and fetching values...\n\n"
+		set_project_id
 		cache_values
 	fi
 }

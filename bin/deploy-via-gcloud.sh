@@ -7,29 +7,9 @@ set -u          # Treat unset variables as an error when substituting
 # Requires an environment arg (e.g., staging, production).
 deploy_via_gcloud() {
 	printf "\n"
-	# Check if environment parameter is provided
-	if [[ $# -ne 1 ]]; then
-		echo "Usage: $0 <env>"
-		echo "Example: $0 staging"
-		exit 1
-	fi
-	env=$1
 
-	# Load the current project variables
 	script_dir=$(dirname "$0")
-	source "${script_dir}/get-project-vars.sh"
-
-	# Get the cached & actual Terraform workspace
-	current_workspace=$(terraform -chdir=infra workspace show)
-	cached_workspace=${workspace}
-
-	# Select the desired workspace
-	terraform -chdir=infra workspace select "${env}"
-
-	# Determine if cache should be invalidated to not deploy to the wrong environment
-	if [[ ${current_workspace} != "${cached_workspace}" ]]; then
-		source "${script_dir}/get-project-vars.sh" --invalidate_cache
-	fi
+	source "${script_dir}/select-environment.sh" "$1"
 
 	# Deploy the Google Cloud Function
 	echo "Deploying to Google Cloud Functions..."
