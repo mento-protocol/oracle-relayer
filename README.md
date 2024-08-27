@@ -18,7 +18,7 @@
    # For other systems, see https://cloud.google.com/sdk/docs/install
    ```
 
-1. Install trunk (one linter to rule them all)
+1. Install `trunk` (one linter to rule them all)
 
    ```sh
    # For macOS
@@ -38,7 +38,7 @@
    # For other systems, see https://jqlang.github.io/jq/
    ```
 
-1. Install Terraform
+1. Install `terraform`
 
    ```sh
    # On macOS

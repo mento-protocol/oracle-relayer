@@ -2,23 +2,39 @@
 
 How to deploy the entire off-chain oracle relayer infrastructure from scratch.
 
+- [Infra Deployment via Terraform](#infra-deployment-via-terraform)
+  - [Terraform State Management](#terraform-state-management)
+  - [Google Cloud Permission Requirements](#google-cloud-permission-requirements)
+    - [Using Service Account Impersonation (recommended)](#using-service-account-impersonation-recommended)
+    - [Using Your Own Gcloud User Account (not recommended)](#using-your-own-gcloud-user-account-not-recommended)
+  - [Deployment](#deployment)
+- [Debugging Problems](#debugging-problems)
+  - [View Logs](#view-logs)
+- [Teardown](#teardown)
+
 ## Infra Deployment via Terraform
 
 ### Terraform State Management
 
 - The Terraform State for this project lives in our shared Terraform Seed Project with the ID `mento-terraform-seed-ffac`
-- Deploying the relayer project for the first time should automatically create a subfolder in the google storage bucket used for terraform state management in the seed project
+- Deploying the project for the first time should automatically create a subfolder in the [google storage bucket used for terraform state management in the seed project](https://console.cloud.google.com/storage/browser/mento-terraform-tfstate-6ed6;tab=objects?forceOnBucketsSortingFiltering=true&project=mento-terraform-seed-ffac&prefix=&forceOnObjectsSortingFiltering=false)
 
 ### Google Cloud Permission Requirements
 
-You must have the following Google Cloud IAM roles to deploy this project via Terraform:
+#### Using Service Account Impersonation (recommended)
+
+The project is preconfigured to impersonate our shared terraform service account (see `./infra/versions.tf`).
+The only permission you will need on your own gcloud user account is `roles/iam.serviceAccountTokenCreator` to allow you to impersonate our shared terraform service account.
+
+#### Using Your Own Gcloud User Account (not recommended)
+
+If for whatever reason service account impersonation doesn't work, you'll need at least the following permissions on your personal gcloud account to deploy this project with terraform:
 
 - `roles/resourcemanager.folderViewer` on the folder that you want to create the project in
 - `roles/resourcemanager.organizationViewer` on the organization
 - `roles/resourcemanager.projectCreator` on the organization
 - `roles/billing.user` on the organization
 - `roles/storage.admin` to allow creation of new storage buckets
-- `roles/iam.serviceAccountTokenCreator` on our Terraform Seed Project to allow impersonating our shared terraform service account
 
 ### Deployment
 
