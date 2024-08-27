@@ -1,7 +1,7 @@
 {
   "staging": {
-    "php_usd": "0xF93c6fe760F09f19880f57D643a17A515c11165c",
-    "celo_php": "0xe9c1d593672A28eE3E3817545D7c2b8397b7871E"
+    "php_usd": "0x9C65c22C96391b0FC09122B86908aD680A8F0FE0",
+    "celo_php": "0x390575D302361B47561b16cf6E4781213a977ca9"
   },
   "prod": {}
 }
