@@ -3,7 +3,7 @@ set -e          # Fail on any error
 set -o pipefail # Ensure piped commands propagate exit codes properly
 set -u          # Treat unset variables as an error when substituting
 
-# Prints the log explorer URL for the Relay Cloud Function and displays it in the terminal.
+# Prints the log explorer URL for the Cloud Function and displays it in the terminal.
 # Requires an environment arg (e.g., staging, production).
 get_function_logs_url() {
 	script_dir=$(dirname "$0")

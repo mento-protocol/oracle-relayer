@@ -3,7 +3,7 @@ set -e          # Fail on any error
 set -o pipefail # Ensure piped commands propagate exit codes properly
 set -u          # Treat unset variables as an error when substituting
 
-# Fetches the latest logs for the Relay Cloud Function and displays them in the terminal.
+# Fetches the latest logs for the Cloud Function and displays them in the terminal.
 # Requires an environment arg (e.g., staging, production).
 get_function_logs() {
 	script_dir=$(dirname "$0")
