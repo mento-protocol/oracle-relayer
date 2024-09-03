@@ -9,8 +9,12 @@ export interface Env {
 
 const schema: JSONSchemaType<Env> = {
   type: "object",
-  required: ["GCP_PROJECT_ID", "NODE_ENV", "DISCORD_WEBHOOK_URL_SECRET_ID",
-    "RELAYER_MNEMONIC_SECRET_ID"],
+  required: [
+    "GCP_PROJECT_ID",
+    "NODE_ENV",
+    "DISCORD_WEBHOOK_URL_SECRET_ID",
+    "RELAYER_MNEMONIC_SECRET_ID",
+  ],
   properties: {
     GCP_PROJECT_ID: { type: "string" },
     DISCORD_WEBHOOK_URL_SECRET_ID: { type: "string" },
