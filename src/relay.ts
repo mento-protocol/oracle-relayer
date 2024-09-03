@@ -19,7 +19,10 @@ const isMainnet = config.NODE_ENV !== "development";
 
 // Re-use clients across function invocations to save on initialization time and memory
 let publicClient: PublicClient;
-let walletClient: WalletClient;
+const walletClients: Map<string, WalletClient> = new Map<
+  string,
+  WalletClient
+>();
 const contractCodeCache = new Map<string, boolean>();
 
 export default async function relay(
@@ -105,18 +108,21 @@ function getOrCreatePublicClient(): PublicClient {
 /**
  * Either returns an existing cached wallet client or creates a new one if it doesn't exist
  */
-async function getOrCreateWalletClient(rateFeedName: string) {
-  // This value is NOT always falsy, as it is set in the first call to this function and will be true in subsequent calls
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (!walletClient) {
+async function getOrCreateWalletClient(
+  rateFeedName: string,
+): Promise<WalletClient> {
+  if (!walletClients.has(rateFeedName)) {
     const mnemonic = await getSecret(config.RELAYER_MNEMONIC_SECRET_ID);
-    walletClient = createWalletClient({
+    const newWalletClient = createWalletClient({
       account: deriveRelayerAccount(mnemonic, rateFeedName),
       chain: isMainnet ? celo : celoAlfajores,
       transport: http(),
     });
+    walletClients.set(rateFeedName, newWalletClient);
   }
-  return walletClient;
+
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  return walletClients.get(rateFeedName)!;
 }
 
 async function isContract(address: string): Promise<boolean> {
