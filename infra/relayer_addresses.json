@@ -3,5 +3,8 @@
     "php_usd": "0x9C65c22C96391b0FC09122B86908aD680A8F0FE0",
     "celo_php": "0x390575D302361B47561b16cf6E4781213a977ca9"
   },
-  "prod": {}
+  "prod": {
+    "php_usd": "0x3bC1f31B8150dc65B9fB9E8B69604C40EaA97C2F",
+    "celo_php": "0x8Ec42cd1F5F41EAA8701a0a246cD76Fc7543EA8E"
+  }
 }
