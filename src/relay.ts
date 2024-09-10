@@ -10,10 +10,10 @@ import {
 import { celo, celoAlfajores } from "viem/chains";
 
 import config from "./config";
-import { deriveRelayerAccount } from "./utils";
 import getSecret from "./get-secret";
 import getLogger from "./logger";
 import { relayerAbi } from "./relayer-abi";
+import { deriveRelayerAccount } from "./utils";
 
 const isMainnet = config.NODE_ENV !== "development";
 
@@ -84,6 +84,9 @@ export default async function relay(
     // from the rpc client, i.e. not enough balance, incorrect nonce, tx broadcast timeout, etc,. in
     // which case the shortMessage should be descriptive enough
     logger.error(`Relay failed with a non-revert error: ${err.shortMessage}`);
+    logger.error(
+      `Tried calling ${relayerAddress} from signer wallet ${(wallet.account?.address as string | undefined) ?? "<undefined>"}`,
+    );
 
     return false;
   }
