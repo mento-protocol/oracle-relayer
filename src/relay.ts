@@ -10,16 +10,19 @@ import {
 import { celo, celoAlfajores } from "viem/chains";
 
 import config from "./config";
-import { deriveRelayerAccount } from "./utils";
 import getSecret from "./get-secret";
 import getLogger from "./logger";
 import { relayerAbi } from "./relayer-abi";
+import { deriveRelayerAccount } from "./utils";
 
 const isMainnet = config.NODE_ENV !== "development";
 
 // Re-use clients across function invocations to save on initialization time and memory
 let publicClient: PublicClient;
-let walletClient: WalletClient;
+const walletClients: Map<string, WalletClient> = new Map<
+  string,
+  WalletClient
+>();
 const contractCodeCache = new Map<string, boolean>();
 
 export default async function relay(
@@ -81,6 +84,9 @@ export default async function relay(
     // from the rpc client, i.e. not enough balance, incorrect nonce, tx broadcast timeout, etc,. in
     // which case the shortMessage should be descriptive enough
     logger.error(`Relay failed with a non-revert error: ${err.shortMessage}`);
+    logger.error(
+      `Tried calling ${relayerAddress} from signer wallet ${(wallet.account?.address as string | undefined) ?? "<undefined>"}`,
+    );
 
     return false;
   }
@@ -105,18 +111,21 @@ function getOrCreatePublicClient(): PublicClient {
 /**
  * Either returns an existing cached wallet client or creates a new one if it doesn't exist
  */
-async function getOrCreateWalletClient(rateFeedName: string) {
-  // This value is NOT always falsy, as it is set in the first call to this function and will be true in subsequent calls
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (!walletClient) {
+async function getOrCreateWalletClient(
+  rateFeedName: string,
+): Promise<WalletClient> {
+  if (!walletClients.has(rateFeedName)) {
     const mnemonic = await getSecret(config.RELAYER_MNEMONIC_SECRET_ID);
-    walletClient = createWalletClient({
+    const newWalletClient = createWalletClient({
       account: deriveRelayerAccount(mnemonic, rateFeedName),
       chain: isMainnet ? celo : celoAlfajores,
       transport: http(),
     });
+    walletClients.set(rateFeedName, newWalletClient);
   }
-  return walletClient;
+
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  return walletClients.get(rateFeedName)!;
 }
 
 async function isContract(address: string): Promise<boolean> {
