@@ -4,9 +4,9 @@ resource "google_logging_metric" "successful_relay_count" {
   name        = "successful_relay_count"
   description = "Number of log entries containing 'Relay succeeded' in the relay cloud function"
   filter      = <<EOF
-    severity=DEFAULT
+    severity>=DEFAULT
     SEARCH("`Relay succeeded`")
-    resource.labels.service_name="${google_cloudfunctions2_function.relay.name}"
+    resource.labels.function_name="${google_cloudfunctions2_function.relay.name}"
   EOF
 }
 
@@ -49,7 +49,7 @@ resource "google_monitoring_alert_policy" "successful_relay_policy" {
 
     condition_threshold {
       filter = <<EOF
-        resource.type = "cloud_run_revision" AND
+        resource.type = "cloud_function" AND
         metric.type   = "logging.googleapis.com/user/${google_logging_metric.successful_relay_count.name}"
       EOF
 
