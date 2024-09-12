@@ -10,6 +10,7 @@ import {
 import { celo, celoAlfajores } from "viem/chains";
 
 import config from "./config";
+import sendDiscordNotification from "./send-discord-notification";
 import getSecret from "./get-secret";
 import getLogger from "./logger";
 import { relayerAbi } from "./relayer-abi";
@@ -76,7 +77,11 @@ export default async function relay(
       (err) => err instanceof ContractFunctionRevertedError,
     );
     if (revertError instanceof ContractFunctionRevertedError) {
-      handleContractFunctionRevertError(revertError, logger);
+      await handleContractFunctionRevertError(
+        rateFeedName,
+        revertError,
+        logger,
+      );
       return false;
     }
 
@@ -85,7 +90,9 @@ export default async function relay(
     // which case the shortMessage should be descriptive enough
     logger.error(`Relay failed with a non-revert error: ${err.shortMessage}`);
     logger.error(
-      `Tried calling ${relayerAddress} from signer wallet ${(wallet.account?.address as string | undefined) ?? "<undefined>"}`,
+      `Tried calling ${relayerAddress} from signer wallet ${
+        (wallet.account?.address as string | undefined) ?? "<undefined>"
+      }`,
     );
 
     return false;
@@ -150,7 +157,8 @@ async function isContract(address: string): Promise<boolean> {
  *   1. A custom error defined in the relayer contract, i.e. InvalidPrice, TimestampNotNew, etc.
  *   2. An error from a require statement, in which case we try to extract the reason
  */
-function handleContractFunctionRevertError(
+async function handleContractFunctionRevertError(
+  rateFeedName: string,
   revertError: ContractFunctionRevertedError,
   logger: ReturnType<typeof getLogger>,
 ) {
@@ -170,6 +178,7 @@ function handleContractFunctionRevertError(
     }
     case "InvalidPrice": {
       logger.error("Relay failed. Chainlink price is invalid");
+      await sendDiscordNotification(rateFeedName);
       break;
     }
     case "Error": {
