@@ -6,6 +6,8 @@
 - [Debugging Local Problems](#debugging-local-problems)
 - [npm tasks and dev scripts](#npm-tasks-and-dev-scripts)
 - [Updating the Cloud Function](#updating-the-cloud-function)
+- [Deploying a new Oracle Relayer](#deploying-a-new-oracle-relayer)
+- [Aegis Export for Monitoring Relayers](#aegis-export-for-monitoring-relayers)
 
 ## Local Setup
 
@@ -201,3 +203,21 @@ You have two options to deploy the Cloud Function code, `terraform` or `gcloud` 
      - Will lead to inconsistent terraform state (because terraform is tracking the function source code and its version)
      - Different commands to remember when updating infra components vs cloud function source code
      - Will only work for updating a pre-existing cloud function's code, will fail for a first-time deploy
+
+## Deploying a new Oracle Relayer
+
+1. Deploy the new relayer contracts via the [relayer factory](https://github.com/mento-protocol/mento-core/blob/develop/contracts/oracles/ChainlinkRelayerFactory.sol). Exemplary deployment scripts can be found in the [MU07 Deployment Scripts](https://github.com/mento-protocol/mento-deployment/blob/main/script/upgrades/MU07/deploy/MU07-Deploy-ChainlinkRelayers.sol)
+1. Ensure the new relayers have been whitelisted in SortedOracles on both Alfajores and Mainnet (otherwise all relay() transactions will fail)
+1. Add the addresses of the deployed relayers to [relayer_addresses.json](./infra/relayer_addresses.json) (alfajores relayers under `staging`, mainnet relayers under `prod`)
+1. Run `npm run deploy:staging` and/or `npm run deploy:prod` to create GCP cloud scheduler jobs for the new relayers
+1. [Add the new relayers to aegis for monitoring](#aegis-export-for-monitoring-relayers)
+
+## Aegis Export for Monitoring Relayers
+
+1. Run `npm run aegis:export` to print out an aegis config template in your local CLI
+1. Copy the relevant sections for the relayers you want to add to aegis
+1. Paste them into [aegis' config.local.yaml](https://github.com/mento-protocol/aegis/blob/main/config.local.yaml)
+1. Run aegis in dev mode via `npm run dev`, check that there are no errors in the log outputs
+1. Copy your changes to config.local.yaml over into [config.yaml](https://github.com/mento-protocol/aegis/blob/main/config.yaml)
+1. Submit a PR with your changes
+1. After successful code review, deploy your changes via `npm run deploy` in aegis

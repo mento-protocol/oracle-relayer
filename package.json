@@ -6,6 +6,7 @@
   "author": "Mento Labs <eng@mentolabs.xyz>",
   "main": "dist/index.js",
   "scripts": {
+    "aegis:export": "./bin/aegis-export.sh",
     "build": "rimraf dist && tsc",
     "cache:clear": "./bin/get-project-vars.sh --invalidate-cache",
     "deploy:function:prod": "./bin/deploy-via-gcloud.sh prod",
@@ -16,7 +17,7 @@
     "destroy:staging": "./bin/destroy-project.sh staging",
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'npm run build && npm run start'",
     "gcp-build": "npm run build",
-    "generate:env": "terraform -chdir=infra apply -target=local_file.env_file",
+    "generate:env": "terraform -chdir=infra apply -target=local_file.env_file -auto-approve",
     "get:relayer:signer": "NODE_ENV=development npx ts-node ./src/get-relayer-signer.ts",
     "logs": "npm run logs:function:staging",
     "logs:function:prod": "./bin/get-function-logs.sh prod",
