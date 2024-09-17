@@ -55,7 +55,7 @@ resource "google_monitoring_alert_policy" "successful_relay_policy" {
   enabled      = true
 
   documentation {
-    content = "No successful relay events have been logged in the last 30 minutes"
+    content = "No successful relay events for $${metric.label.ratefeed} in the past 30 minutes"
   }
 
   conditions {
