@@ -8,6 +8,20 @@ resource "google_logging_metric" "successful_relay_count" {
     SEARCH("`Relay succeeded`")
     resource.labels.function_name="${google_cloudfunctions2_function.relay.name}"
   EOF
+
+  metric_descriptor {
+    metric_kind = "DELTA"
+    value_type  = "INT64"
+    unit        = "1"
+
+    labels {
+      key = "ratefeed"
+    }
+  }
+
+  label_extractors = {
+    "ratefeed" = "EXTRACT(labels.rateFeed)"
+  }
 }
 
 # Discord notification channel for info-only alerts
@@ -17,7 +31,7 @@ resource "google_monitoring_notification_channel" "discord_channel" {
   type         = "webhook_tokenauth"
 
   labels = {
-    url = var.discord_webhook_url
+    url = terraform.workspace == "prod" ? var.discord_webhook_url_prod : var.discord_webhook_url_staging
   }
 }
 
@@ -58,9 +72,9 @@ resource "google_monitoring_alert_policy" "successful_relay_policy" {
       threshold_value = 1
 
       aggregations {
-        alignment_period     = "1800s" # 1 hour
-        per_series_aligner   = "ALIGN_SUM"
-        cross_series_reducer = "REDUCE_SUM"
+        alignment_period     = "1800s" # 30 minutes
+        per_series_aligner   = "ALIGN_COUNT"
+        cross_series_reducer = "REDUCE_NONE"
       }
 
       trigger {

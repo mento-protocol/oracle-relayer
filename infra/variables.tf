@@ -46,11 +46,19 @@ variable "discord_webhook_url_secret_id" {
 }
 
 # You can look this up either on the Discord Channel settings, or fetch it from Secret Manager via:
-#  `gcloud secrets versions access latest --secret discord-webhook-url`
-variable "discord_webhook_url" {
+#  `gcloud secrets versions access latest --secret discord-webhook-url-staging`
+variable "discord_webhook_url_staging" {
   type      = string
   sensitive = true
 }
+
+# You can look this up either on the Discord Channel settings, or fetch it from Secret Manager via:
+#  `gcloud secrets versions access latest --secret discord-webhook-url-prod`
+variable "discord_webhook_url_prod" {
+  type      = string
+  sensitive = true
+}
+
 
 
 #####################################################################################
