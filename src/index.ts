@@ -39,7 +39,7 @@ cloudEvent("relay", async (event: CloudEvent<PubsubData>) => {
     };
   }
 
-  const logger = getLogger(rateFeedName, network);
+  const logger = getLogger(rateFeedName, network, event.id);
   const ok = await relay(relayerAddress, rateFeedName, logger);
   if (!ok) {
     return { status: "error", message: "Relay failed" };
