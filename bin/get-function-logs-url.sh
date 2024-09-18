@@ -9,6 +9,12 @@ get_function_logs_url() {
 	script_dir=$(dirname "$0")
 	source "${script_dir}/select-environment.sh" "$1"
 
+	# Get time 1 hour ago in UTC
+	start_time=$(date -u -v-1H +"%Y-%m-%dT%H:%M:%S.000Z")
+
+	# Get current time in UTC
+	end_time=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
+
 	logs_explorer_url=$(
 		cat <<EOF | tr -d '\n' | sed 's/[[:space:]]//g'
 https://console.cloud.google.com/logs/query;
@@ -22,6 +28,8 @@ query=%2528
 	severity%3E%3DDEFAULT;
 storageScope=project;
 summaryFields=labels%252FrateFeed,labels%252Fnetwork:false:32:beginning;
+startTime=${start_time};
+endTime=${end_time};
 ?project=${project_id}
 EOF
 	)
