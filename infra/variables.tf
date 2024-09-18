@@ -30,6 +30,37 @@ variable "relayer_mnemonic" {
   sensitive = true
 }
 
+# Webhook URL to send monitoring alerts from within GCP Monitoring
+# You can find this URL in Victorops by going to "Integrations" -> "Stackdriver".
+# The routing key can be found under "Settings" -> "Routing Keys"
+variable "victorops_webhook_url" {
+  type      = string
+  sensitive = true
+}
+
+# You can look this up via:
+#  `gcloud secrets list`
+variable "discord_webhook_url_secret_id" {
+  type    = string
+  default = "discord-webhook-url"
+}
+
+# You can look this up either on the Discord Channel settings, or fetch it from Secret Manager via:
+#  `gcloud secrets versions access latest --secret discord-webhook-url-staging`
+variable "discord_webhook_url_staging" {
+  type      = string
+  sensitive = true
+}
+
+# You can look this up either on the Discord Channel settings, or fetch it from Secret Manager via:
+#  `gcloud secrets versions access latest --secret discord-webhook-url-prod`
+variable "discord_webhook_url_prod" {
+  type      = string
+  sensitive = true
+}
+
+
+
 #####################################################################################
 # The below are mainly kept in vars so we can read them easier in the shell scripts #
 #####################################################################################

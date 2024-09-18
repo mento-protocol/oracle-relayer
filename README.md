@@ -84,6 +84,18 @@
    # Note that the mnemonic is the same for both the staging and prod environments.
    # To fetch secrets, you'll need the `Secret Manager Secret Accessor` IAM role assigned to your Google Cloud Account
    relayer_mnemonic      = "<relayer-mnemonic>"
+
+   # Get it via `gcloud secrets versions access latest --secret discord_webhook_url_staging`
+   # Note that the above secret only exists in the oracle-relayer-staging GCP project
+   discord_webhook_url_staging      = "<staging-webhook-url>"
+
+   # Get it via `gcloud secrets versions access latest --secret discord_webhook_url_prod`
+   # Note that the above secret only exists in the oracle-relayer-prod GCP project
+   discord_webhook_url_prod      = "<prod-webhook-url>"
+
+   # Get it from our VictorOps by going to `Integrations` > `Stackdriver` and copying the URL. The routing key can be found under the settings tab
+   victorops_webhook_url   = "<victorops-webhook-url>/<victorops-routing-key>"
+
    ```
 
 1. Verify that everything works

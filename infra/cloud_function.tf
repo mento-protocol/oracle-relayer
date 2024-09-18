@@ -24,8 +24,9 @@ resource "google_cloudfunctions2_function" "relay" {
     timeout_seconds       = 60
 
     environment_variables = {
-      GCP_PROJECT_ID             = module.oracle_relayer.project_id
-      RELAYER_MNEMONIC_SECRET_ID = google_secret_manager_secret.relayer_mnemonic.secret_id
+      GCP_PROJECT_ID                = module.oracle_relayer.project_id
+      DISCORD_WEBHOOK_URL_SECRET_ID = google_secret_manager_secret.discord_webhook_url.secret_id
+      RELAYER_MNEMONIC_SECRET_ID    = google_secret_manager_secret.relayer_mnemonic.secret_id
       # Logs execution ID for easier debugging => https://cloud.google.com/functions/docs/monitoring/logging#viewing_runtime_logs
       LOG_EXECUTION_ID = "true"
       NODE_ENV         = terraform.workspace == "staging" ? "development" : "production"
