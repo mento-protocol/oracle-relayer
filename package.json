@@ -37,7 +37,7 @@
     "test:local": "./bin/test-local-function.sh",
     "test:prod": "./bin/test-deployed-function.sh prod",
     "test:staging": "./bin/test-deployed-function.sh staging",
-    "todo": "git ls-files -c --exclude-standard | grep -v \"package.json\" | xargs grep -n -i --color \"TODO:\\|FIXME:\""
+    "todo": "git ls-files -c --exclude-standard | grep -v \"package.json\" | xargs grep -n -i --color \"TODO:\\|FIXME:\" || true"
   },
   "dependencies": {
     "@google-cloud/functions-framework": "^3.4.2",
