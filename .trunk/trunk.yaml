@@ -48,15 +48,22 @@ actions:
     - commitizen
   enabled:
     - commitlint
+    - is-local-function-working
     - trunk-announce
     - trunk-check-pre-push
     - trunk-fmt-pre-commit
     - trunk-upgrade-available
+    - todo-git-hook
   definitions:
     - id: todo-git-hook
+      run: npm run todo
       triggers:
         - git_hooks: [pre-push, pre-commit]
-      run: npm run todo
+    - id: is-local-function-working
+      run: ./bin/is-local-function-working.sh
+      triggers:
+        - git_hooks: [pre-push]
+
 tools:
   disabled:
     - commitizen

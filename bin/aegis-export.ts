@@ -1,8 +1,8 @@
 import type { Address } from "viem";
 import RelayerAddressesJson from "../infra/relayer_addresses.json";
-import { config } from "./config";
-import getSecret from "./get-secret";
-import { deriveRelayerAccount, toRateFeedId } from "./utils";
+import { config } from "../src/config";
+import getSecret from "../src/get-secret";
+import { deriveRelayerAccount, toRateFeedId } from "../src/utils";
 
 const RelayerAddresses = RelayerAddressesJson as {
   [env in "staging" | "prod"]: Record<string, Address>;

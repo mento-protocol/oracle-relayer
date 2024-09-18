@@ -160,7 +160,7 @@ For most local `terraform` or `gcloud` problems, your first steps should always 
 - **General Helper & DX Scripts**
   - `cache:clear`: Clears local shell script cache and refresh it with current values
   - `generate:env`: Auto-generates/updates a local `.env` required by a locally running cloud function server
-  - `todo`: Lists all `TODO:` comments
+  - `todo`: Lists all `TODO` and `FIXME` comments
 - **Shell Scripts**
   - `set-up-terraform.sh`: Checks required IAM permissions, provisions terraform providers, modules, and workspaces
   - `check-gcloud-login.sh`: Checks for Google Cloud login and application-default credentials.
