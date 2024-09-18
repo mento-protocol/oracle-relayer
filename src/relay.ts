@@ -178,7 +178,7 @@ async function handleContractFunctionRevertError(
     }
     case "InvalidPrice": {
       logger.error("Relay failed. Chainlink price is invalid");
-      await sendDiscordNotification(rateFeedName);
+      await sendDiscordNotification(rateFeedName, revertError);
       break;
     }
     case "Error": {
