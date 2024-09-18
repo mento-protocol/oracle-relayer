@@ -1,4 +1,4 @@
-import { getAddress, keccak256, toHex } from "viem";
+import { Address, getAddress, keccak256, toHex } from "viem";
 import { HDAccount, mnemonicToAccount } from "viem/accounts";
 
 import { createHash } from "crypto";
@@ -33,7 +33,7 @@ export function deriveRelayerAccount(
  * @param rateFeed The rate feed name in string format, i.e. "PHPUSD" or "CELOPHP"
  * @returns The rate feed ID in address format, i.e. "0xab921d6ab1057601A9ae19879b111fC381a2a8E9" for PHPUSD
  */
-export function toRateFeedId(rateFeed: string) {
+export function toRateFeedId(rateFeed: string): Address {
   // 1. Calculate keccak256 hash
   const hashedBytes = keccak256(toHex(rateFeed));
 
