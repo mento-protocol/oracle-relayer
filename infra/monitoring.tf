@@ -51,7 +51,7 @@ resource "google_monitoring_notification_channel" "victorops_channel" {
 resource "google_monitoring_alert_policy" "successful_relay_policy" {
   project      = module.oracle_relayer.project_id
   display_name = "no-successful-relay-logs"
-  combiner     = "OR"
+  combiner     = "OR" # Not used in practice because we only have one condition, but it's required by the API
   enabled      = true
 
   documentation {
