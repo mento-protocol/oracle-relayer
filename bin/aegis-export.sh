@@ -26,4 +26,5 @@ fi
 
 # Print out all signer wallets for all relayers in an aegis-compatible format (so monitoring additional signer wallets becomes as easy as copy-pasting)
 echo "Generating aegis-compatible signer wallet export..."
-NODE_ENV=development npx ts-node ./src/aegis-export.ts
+script_dir=$(dirname "$0")
+NODE_ENV=development npx ts-node "${script_dir}/aegis-export.ts"
