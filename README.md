@@ -93,7 +93,7 @@
    # Note that the above secret only exists in the oracle-relayer-prod GCP project
    discord_webhook_url_prod      = "<prod-webhook-url>"
 
-   # Get it from our VictorOps by and `Integrations` > `Stackdriver` and copying the URL. The routing key can be founder under the settings tab
+   # Get it from our VictorOps by going to `Integrations` > `Stackdriver` and copying the URL. The routing key can be found under the settings tab
    victorops_webhook_url   = "<victorops-webhook-url>/<victorops-routing-key>"
 
    ```
