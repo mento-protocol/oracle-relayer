@@ -3,6 +3,7 @@ import config from "./config";
 import getLogger from "./logger";
 import relay from "./relay";
 import type { PubsubData, RelayRequested } from "./types";
+import { getTraceId } from "./utils";
 
 const isMainnet = config.NODE_ENV !== "development";
 const network = isMainnet ? "Celo" : "Alfajores";
@@ -39,8 +40,10 @@ cloudEvent("relay", async (event: CloudEvent<PubsubData>) => {
     };
   }
 
-  const logger = getLogger(rateFeedName, network, event.id);
+  const traceId = getTraceId(event);
+  const logger = getLogger(rateFeedName, network, traceId);
   const ok = await relay(relayerAddress, rateFeedName, logger);
+
   if (!ok) {
     return { status: "error", message: "Relay failed" };
   }

@@ -1,7 +1,8 @@
+import type { CloudEvent } from "@google-cloud/functions-framework";
+import { createHash } from "crypto";
 import { Address, getAddress, keccak256, toHex } from "viem";
 import { HDAccount, mnemonicToAccount } from "viem/accounts";
-
-import { createHash } from "crypto";
+import type { PubsubData } from "./types";
 
 /**
  * Given a mnemonic and a rate feed name, returns the derived account that will be used
@@ -48,4 +49,31 @@ export function toRateFeedId(rateFeed: string): Address {
 
   // 5. Return calculated rate feed ID
   return getAddress(addressHex);
+}
+
+/**
+ * Extracts the trace ID from a CloudEvent.
+ *
+ * Turns a traceparent ID like '00-7fb76f99d75f56708e5b7f611910fe90-39e5b0878897fa79-01'
+ * into '7fb76f99d75f56708e5b7f611910fe90'
+ *
+ * Will attempt to extract it from the traceparent header, otherwise falls back to the event ID.
+ * Unfortunately GCP's documentation around what exactly the trace ID should be is very unclear,
+ * but from trial and error it seems that the trace ID is the middle portion of the event.traceparent
+ *
+ * @param event
+ * @returns A trace ID as a string
+ */
+export function getTraceId(event: CloudEvent<PubsubData>) {
+  let traceId: string | undefined;
+
+  // Try extracting the trace ID from the traceparent, otherwise fall back to the event ID
+  if (event.traceparent && typeof event.traceparent === "string") {
+    const match = /^[0-9a-f]{2}-([0-9a-f]{32})-/.exec(event.traceparent);
+    traceId = match ? match[1] : event.id;
+  } else {
+    traceId = event.id;
+  }
+
+  return traceId;
 }
