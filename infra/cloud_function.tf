@@ -57,7 +57,7 @@ data "archive_file" "function_source" {
   output_path = "${path.module}/../function-source.zip"
 
   # Not sure if this is stricly necessary when defining a .gcloudignore file, but better safe than sorry
-  excludes = [".env", ".env.example", ".env.yaml", ".git", ".gitignore", ".trunk", ".vscode", "README.md", "dist", "commitlint.config.mjs", "eslint.config.mjs", "infra", "node_modules"]
+  excludes = [".env", ".env.example", ".env.yaml", ".git", ".gitignore", ".trunk", ".vscode", "README.md", "dist", "commitlint.config.mjs", "eslint.config.mjs", "infra", "node_modules", "src/aegis-export.ts"]
 }
 
 # Storage Bucket for the Cloud Function source code
