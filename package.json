@@ -7,7 +7,7 @@
   "main": "dist/index.js",
   "scripts": {
     "aegis:export": "./bin/aegis-export.sh",
-    "build": "rimraf dist && tsc",
+    "build": "rimraf dist && tsc -p tsconfig.build.json",
     "cache:clear": "./bin/get-project-vars.sh --invalidate-cache",
     "deploy:function:prod": "./bin/deploy-via-gcloud.sh prod",
     "deploy:function:staging": "./bin/deploy-via-gcloud.sh staging",

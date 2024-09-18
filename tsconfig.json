@@ -1,6 +1,6 @@
 {
-  "include": ["src/**/*", "bin/*.ts"],
-  "exclude": ["node_modules", "dist", "bin"],
+  "include": ["src/**/*", "bin/**/*"],
+  "exclude": ["node_modules", "dist"],
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig to read more about this file */
 
