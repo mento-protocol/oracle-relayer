@@ -57,7 +57,7 @@ data "archive_file" "function_source" {
   output_path = "${path.module}/../function-source.zip"
 
   # Not sure if this is stricly necessary when defining a .gcloudignore file, but better safe than sorry
-  excludes = [".env", ".env.example", ".env.yaml", ".git", ".gitignore", ".trunk", ".vscode", "README.md", "dist", "commitlint.config.mjs", "eslint.config.mjs", "infra", "node_modules"]
+  excludes = [".env", ".env.example", ".env.yaml", ".git", ".gitignore", ".trunk", ".vscode", "README.md", "dist", "commitlint.config.mjs", "eslint.config.mjs", "infra", "node_modules", "src/aegis-export.ts"]
 }
 
 # Storage Bucket for the Cloud Function source code
@@ -79,7 +79,7 @@ resource "google_storage_bucket" "relay_function" {
 
 # Upload the Cloud Function source code to the Storage Bucket
 resource "google_storage_bucket_object" "source_code" {
-  name   = "function-source-${terraform.workspace}-${data.archive_file.function_source.output_sha256}.zip"
+  name   = "function-source-${terraform.workspace}-${data.archive_file.function_source.output_md5}.zip"
   bucket = google_storage_bucket.relay_function.name
   source = data.archive_file.function_source.output_path
 }

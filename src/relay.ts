@@ -9,10 +9,10 @@ import {
 } from "viem";
 import { celo, celoAlfajores } from "viem/chains";
 
+import type { Logger } from "winston";
 import config from "./config";
 import sendDiscordNotification from "./send-discord-notification";
 import getSecret from "./get-secret";
-import getLogger from "./logger";
 import { relayerAbi } from "./relayer-abi";
 import { deriveRelayerAccount } from "./utils";
 
@@ -29,9 +29,8 @@ const contractCodeCache = new Map<string, boolean>();
 export default async function relay(
   relayerAddress: string,
   rateFeedName: string,
-  network: string,
+  logger: Logger,
 ): Promise<boolean> {
-  const logger = getLogger(rateFeedName, network);
   logger.info(`Relay request received for ${relayerAddress}`);
 
   if (!(await isContract(relayerAddress))) {
@@ -160,7 +159,7 @@ async function isContract(address: string): Promise<boolean> {
 async function handleContractFunctionRevertError(
   rateFeedName: string,
   revertError: ContractFunctionRevertedError,
-  logger: ReturnType<typeof getLogger>,
+  logger: Logger,
 ) {
   const errName = revertError.data?.errorName ?? "";
   switch (errName) {

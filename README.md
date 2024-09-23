@@ -148,6 +148,9 @@ For most local `terraform` or `gcloud` problems, your first steps should always 
   - `dev`: Starts a local server for the cloud function code (with hot-reloading via `nodemon`)
   - `start`: Starts a local server for the cloud function code (without hot-reloading)
   - `test`: Triggers a local cloud function server with a mocked PubSub event
+- **Switching Between Environments**
+  - `staging`: Switches the terraform workspace and your local `gcloud` project to staging
+  - `prod`: Switches the terraform workspace and your local `gcloud` project to prod
 - **Deploying and Destroying**
   - `deploy:function:staging`: Deploys the cloud function to staging (via `gcloud functions deploy`)
   - `deploy:function:prod`: Deploys the cloud function to production (via `gcloud functions deploy`)

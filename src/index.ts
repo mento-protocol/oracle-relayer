@@ -1,7 +1,9 @@
 import { cloudEvent, CloudEvent } from "@google-cloud/functions-framework";
 import config from "./config";
+import getLogger from "./logger";
 import relay from "./relay";
 import type { PubsubData, RelayRequested } from "./types";
+import { getTraceId } from "./utils";
 
 const isMainnet = config.NODE_ENV !== "development";
 const network = isMainnet ? "Celo" : "Alfajores";
@@ -18,7 +20,9 @@ cloudEvent("relay", async (event: CloudEvent<PubsubData>) => {
     return { status: "error", message: "Invalid event data format" };
   }
 
-  let parsedEventData, rateFeedName, relayerAddress;
+  let parsedEventData: RelayRequested,
+    rateFeedName: string,
+    relayerAddress: string;
   try {
     const decodedEventData = Buffer.from(eventData, "base64").toString("utf-8");
     parsedEventData = JSON.parse(decodedEventData) as RelayRequested;
@@ -36,7 +40,10 @@ cloudEvent("relay", async (event: CloudEvent<PubsubData>) => {
     };
   }
 
-  const ok = await relay(relayerAddress, rateFeedName, network);
+  const traceId = getTraceId(event);
+  const logger = getLogger(rateFeedName, network, traceId);
+  const ok = await relay(relayerAddress, rateFeedName, logger);
+
   if (!ok) {
     return { status: "error", message: "Relay failed" };
   }

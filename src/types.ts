@@ -1,11 +1,11 @@
 export interface PubsubData {
-  subscription: string;
   message: {
+    attributes?: Record<string, string>;
+    data: string;
     messageId: string;
     publishTime: string;
-    data: string;
-    attributes?: Record<string, string>;
   };
+  subscription: string;
 }
 
 export interface RelayRequested {

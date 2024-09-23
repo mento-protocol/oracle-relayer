@@ -20,4 +20,6 @@ commitlint.config.mjs
 eslint.config.mjs
 infra
 
+src/aegis-export.ts
+
 #!include:.gitignore
