@@ -6,11 +6,13 @@ set -u          # Treat unset variables as an error when substituting
 # Fetches the latest logs for the Cloud Function and displays them in the terminal.
 # Requires an environment arg (e.g., staging, production).
 get_function_logs() {
+	# Load the current project variables
 	script_dir=$(dirname "$0")
-	source "${script_dir}/select-environment.sh" "$1"
+	source "${script_dir}/get-project-vars.sh"
 
 	# Fetch raw logs
 	raw_logs=$(gcloud logging read "resource.labels.function_name=${function_name}" \
+		--project "${project_id}" \
 		--format json \
 		--limit 50)
 

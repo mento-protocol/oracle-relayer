@@ -8,8 +8,9 @@ set -u          # Treat unset variables as an error when substituting
 deploy_via_gcloud() {
 	printf "\n"
 
+	# Load the current project variables
 	script_dir=$(dirname "$0")
-	source "${script_dir}/select-environment.sh" "$1"
+	source "${script_dir}/get-project-vars.sh"
 
 	# Deploy the Google Cloud Function
 	echo "Deploying to Google Cloud Functions..."
