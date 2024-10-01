@@ -6,8 +6,9 @@ set -u          # Treat unset variables as an error when substituting
 # Prints the log explorer URL for the Cloud Function and displays it in the terminal.
 # Requires an environment arg (e.g., staging, production).
 get_function_logs_url() {
+	# Load the current project variables
 	script_dir=$(dirname "$0")
-	source "${script_dir}/select-environment.sh" "$1"
+	source "${script_dir}/get-project-vars.sh"
 
 	# Get time 1 hour ago in UTC
 	start_time=$(date -u -v-1H +"%Y-%m-%dT%H:%M:%S.000Z")
