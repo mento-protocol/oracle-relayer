@@ -219,8 +219,7 @@ You have two options to deploy the Cloud Function code, `terraform` or `gcloud` 
 
 1. Run `npm run aegis:export` to print out an aegis config template in your local CLI
 1. Copy the relevant sections for the relayers you want to add to aegis
-1. Paste them into [aegis' config.local.yaml](https://github.com/mento-protocol/aegis/blob/main/config.local.yaml)
+1. Paste them into [aegis' config.yaml](https://github.com/mento-protocol/aegis/blob/main/config.yaml)
 1. Run aegis in dev mode via `npm run dev`, check that there are no errors in the log outputs
-1. Copy your changes to config.local.yaml over into [config.yaml](https://github.com/mento-protocol/aegis/blob/main/config.yaml)
 1. Submit a PR with your changes
 1. After successful code review, deploy your changes via `npm run deploy` in aegis
