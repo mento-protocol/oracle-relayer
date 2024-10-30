@@ -56,11 +56,17 @@ const createRelayer = <T extends Environment>(
 ): Relayer => {
   // Type assertion (as string) is safe here because we know that the keys of our RelayerAddresses object are always strings
   const formattedRateFeed = (rateFeed as string).replace("_", "").toUpperCase();
+
+  // We use the format {base}/{quote} when deriving the relayer signer address from the rate feed
+  const rateFeedWithSlash = (rateFeed as string)
+    .replace("_", "/")
+    .toUpperCase();
+
   return {
     env,
     rateFeed: formattedRateFeed,
     rateFeedId: toRateFeedId(`relayed:${formattedRateFeed}`),
-    signerAddress: deriveRelayerAccount(mnemonic, rateFeed as string).address,
+    signerAddress: deriveRelayerAccount(mnemonic, rateFeedWithSlash).address,
     relayerAddress: RelayerAddresses[env][rateFeed] as Address,
   };
 };
@@ -80,6 +86,18 @@ ${relayers.map(({ rateFeed, rateFeedId }) => `    'relayed:${rateFeed}': '${rate
 ${relayers.map(({ rateFeed, signerAddress }) => `    RelayerSigner${rateFeed}: '${signerAddress}'`).join("\n")}
 
 metrics:
+  # Checks rate feed trading modes
+  - source: BreakerBox.getRateFeedTradingMode(address rateFeed)(uint8)
+    schedule: 0/10 * * * * *
+    type: gauge
+    chains: all
+    # NOTE: We filtered out derived CELO rate feeds like 'relayed:CELOPHP' here because we typically don't add breakers for them
+    variants:
+${relayers
+  .map(({ rateFeed }) => `      - [relayed:${rateFeed}]`)
+  .filter((rateFeed) => !rateFeed.includes("relayed:CELO"))
+  .join("\n")}
+
   # Checks for rate feed freshness
   - source: SortedOracles.isOldestReportExpired(address rateFeed)(bool,address)
     schedule: 0/10 * * * * *
