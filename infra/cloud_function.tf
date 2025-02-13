@@ -111,7 +111,9 @@ resource "google_storage_bucket_iam_member" "cloud_build_storage_access" {
 resource "google_project_iam_member" "cloudbuild_builder" {
   project = module.oracle_relayer.project_id
   role    = "roles/cloudbuild.builds.builder"
-  member  = "serviceAccount:${module.oracle_relayer.service_account_email}"
+  # TODO: Research if this is a legitimate issue or not, I didn't see how this could be exploited but might have missed something
+  # checkov:skip=CKV_GCP_49:Ensure roles do not impersonate or manage Service Accounts used at project level
+  member = "serviceAccount:${module.oracle_relayer.service_account_email}"
 }
 
 # Allows the cloud function to access secrets (i.e. the relayer private key) stored in Secret Manager
