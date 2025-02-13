@@ -112,6 +112,7 @@ resource "google_project_iam_member" "cloudbuild_builder" {
   project = module.oracle_relayer.project_id
   role    = "roles/cloudbuild.builds.builder"
   # TODO: Research if this is a legitimate issue or not, I didn't see how this could be exploited but might have missed something
+  # Look into https://docs.prismacloud.io/en/enterprise-edition/policy-reference/google-cloud-policies/google-cloud-iam-policies/bc-gcp-iam-10
   # checkov:skip=CKV_GCP_49:Ensure roles do not impersonate or manage Service Accounts used at project level
   member = "serviceAccount:${module.oracle_relayer.service_account_email}"
 }
