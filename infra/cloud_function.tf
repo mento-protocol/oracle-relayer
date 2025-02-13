@@ -5,7 +5,7 @@ resource "google_cloudfunctions2_function" "relay" {
   description = "Listens to 'RelayRequested' events from Pub/Sub and executes the relay request against the `relayer_address` param of the event."
 
   build_config {
-    runtime         = "nodejs20"
+    runtime         = "nodejs22"
     entry_point     = var.function_entry_point
     service_account = module.oracle_relayer.service_account_name
 

@@ -19,7 +19,7 @@ deploy_via_gcloud() {
 		--gen2 \
 		--project "${project_id}" \
 		--region "${region}" \
-		--runtime nodejs20 \
+		--runtime nodejs22 \
 		--service-account "${service_account_email}" \
 		--source . \
 		--trigger-topic "${topic_name}"
