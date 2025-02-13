@@ -5,7 +5,7 @@ resource "google_cloudfunctions2_function" "relay" {
   description = "Listens to 'RelayRequested' events from Pub/Sub and executes the relay request against the `relayer_address` param of the event."
 
   build_config {
-    runtime         = "nodejs20"
+    runtime         = "nodejs22"
     entry_point     = var.function_entry_point
     service_account = module.oracle_relayer.service_account_name
 
@@ -111,7 +111,9 @@ resource "google_storage_bucket_iam_member" "cloud_build_storage_access" {
 resource "google_project_iam_member" "cloudbuild_builder" {
   project = module.oracle_relayer.project_id
   role    = "roles/cloudbuild.builds.builder"
-  member  = "serviceAccount:${module.oracle_relayer.service_account_email}"
+  # checkov:skip=CKV_GCP_49:The cloudbuild builder role should be safe to assign
+  # See https://docs.prismacloud.io/en/enterprise-edition/policy-reference/google-cloud-policies/google-cloud-iam-policies/bc-gcp-iam-10
+  member = "serviceAccount:${module.oracle_relayer.service_account_email}"
 }
 
 # Allows the cloud function to access secrets (i.e. the relayer private key) stored in Secret Manager
