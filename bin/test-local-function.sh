@@ -10,7 +10,7 @@ print_usage() {
 }
 
 # Check if both parameters are provided
-if [ $# -ne 2 ]; then
+if [[ $# -ne 2 ]]; then
 	print_usage
 fi
 
@@ -27,7 +27,7 @@ test_local_function() {
 
 	# Create the JSON payload and encode it in base64
 	json_data="{ \"rate_feed_name\": \"${rate_feed_name}\", \"relayer_address\": \"${relayer_address}\" }"
-	base64_data=$(echo -n "$json_data" | base64)
+	base64_data=$(echo -n "${json_data}" | base64)
 
 	curl localhost:8080/projects/"${project_name}"/topics/"${topic_name}" \
 		-X POST \
