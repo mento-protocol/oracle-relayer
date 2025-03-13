@@ -168,7 +168,6 @@ async function submitTx(
   const hash = await relayerContract.write.relay([], params);
   const receipt = await publicClient.waitForTransactionReceipt({
     hash,
-    timeout: 50 * 1000, // 10 (L1) or 50 (L2) blocks for the tx to be mined
   });
 
   if (receipt.status !== "success") {
