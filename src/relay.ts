@@ -17,9 +17,9 @@ import { celo, celoAlfajores } from "viem/chains";
 import type { Logger } from "winston";
 import config from "./config";
 import {
-  sendDiscordNotification,
+  sendInvalidPriceNotification,
   sendTxStuckNotification,
-} from "./send-discord-notification";
+} from "./discord-notification";
 import getSecret from "./get-secret";
 import { relayerAbi } from "./relayer-abi";
 import { deriveRelayerAccount } from "./utils";
@@ -206,7 +206,8 @@ async function handleContractFunctionRevertError(
     }
     case "InvalidPrice": {
       logger.error("Relay failed. Chainlink price is invalid");
-      await sendDiscordNotification(rateFeedName, revertError);
+      logger.error(JSON.stringify(revertError, null, 2));
+      await sendInvalidPriceNotification(rateFeedName);
       break;
     }
     case "Error": {
