@@ -167,7 +167,7 @@ async function submitTx(
   // @ts-expect-error todo: tricky to get the params recognized when using the type from the abi
   const hash = await relayerContract.write.relay([], params);
   const receipt = await publicClient.waitForTransactionReceipt({
-    hash,
+    hash
   });
 
   if (receipt.status !== "success") {
