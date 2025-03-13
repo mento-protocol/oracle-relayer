@@ -11,7 +11,6 @@ import {
   createWalletClient,
   getContract,
   http,
-  parseGwei,
 } from "viem";
 import { celo, celoAlfajores } from "viem/chains";
 
@@ -62,7 +61,7 @@ export default async function relay(
   });
 
   try {
-    return await submitTx(contract, isRetryAttempt, logger);
+    return await submitTx(contract, publicClient, isRetryAttempt, logger);
   } catch (err) {
     if (!(err instanceof BaseError)) {
       // Theoretically should never happen, as all errors in Viem should extend BaseError
@@ -153,18 +152,21 @@ async function isContract(address: string): Promise<boolean> {
 
 async function submitTx(
   relayerContract: RelayerContract,
+  client: PublicClient,
   isRetryAttempt: boolean,
   logger: Logger,
 ): Promise<boolean> {
   await relayerContract.simulate.relay();
 
-  const baseGasFee = parseGwei("25");
-  // Attempt to use 2x the base gas fee if it's a retry attempt, otherwise let the RPC decide
-  const params = isRetryAttempt
-    ? { maxFeePerGas: baseGasFee * 2n, maxPriorityFeePerGas: baseGasFee * 2n }
-    : {};
+  const gasParams = await client.estimateFeesPerGas();
+  if (isRetryAttempt) {
+    // We only re-attempt txs that got stuck in the mempool, so we use 2x the recommended gas in case
+    // that was the issue
+    gasParams.maxFeePerGas *= 2n;
+    gasParams.maxPriorityFeePerGas *= 2n;
+  }
 
-  const hash = await relayerContract.write.relay([], params);
+  const hash = await relayerContract.write.relay([], gasParams);
   const receipt = await publicClient.waitForTransactionReceipt({
     hash,
   });
