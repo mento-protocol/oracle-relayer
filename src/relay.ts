@@ -1,4 +1,9 @@
-import type { Address, PublicClient, WalletClient } from "viem";
+import type {
+  Address,
+  GetContractReturnType,
+  PublicClient,
+  WalletClient,
+} from "viem";
 import {
   BaseError,
   ContractFunctionRevertedError,
@@ -11,7 +16,10 @@ import { celo, celoAlfajores } from "viem/chains";
 
 import type { Logger } from "winston";
 import config from "./config";
-import sendDiscordNotification from "./send-discord-notification";
+import {
+  sendInvalidPriceNotification,
+  sendTxStuckNotification,
+} from "./discord-notification";
 import getSecret from "./get-secret";
 import { relayerAbi } from "./relayer-abi";
 import { deriveRelayerAccount } from "./utils";
@@ -26,10 +34,13 @@ const walletClients: Map<string, WalletClient> = new Map<
 >();
 const contractCodeCache = new Map<string, boolean>();
 
+type RelayerContract = GetContractReturnType<typeof relayerAbi, PublicClient>;
+
 export default async function relay(
   relayerAddress: string,
   rateFeedName: string,
   logger: Logger,
+  isRetryAttempt = false,
 ): Promise<boolean> {
   logger.info(`Relay request received for ${relayerAddress}`);
 
@@ -43,28 +54,14 @@ export default async function relay(
   const publicClient = getOrCreatePublicClient();
   const wallet = await getOrCreateWalletClient(rateFeedName);
 
-  const contract = getContract({
+  const contract: RelayerContract = getContract({
     address: relayerAddress as Address,
     abi: relayerAbi,
     client: { public: publicClient, wallet },
   });
 
   try {
-    await contract.simulate.relay();
-
-    const hash = await contract.write.relay();
-    const receipt = await publicClient.waitForTransactionReceipt({
-      hash,
-      timeout: 50 * 1000, // 10 blocks for the tx to be mined
-    });
-
-    if (receipt.status !== "success") {
-      logger.error(`Relay tx failed: ${hash}`);
-      return false;
-    }
-
-    logger.info(`Relay succeeded: ${hash}`);
-    return true;
+    return await submitTx(contract, publicClient, isRetryAttempt, logger);
   } catch (err) {
     if (!(err instanceof BaseError)) {
       // Theoretically should never happen, as all errors in Viem should extend BaseError
@@ -87,14 +84,16 @@ export default async function relay(
     // At this point we know that the error is not a revert from the contract, so it could be an error
     // from the rpc client, i.e. not enough balance, incorrect nonce, tx broadcast timeout, etc,. in
     // which case the shortMessage should be descriptive enough
-    logger.error(`Relay failed with a non-revert error: ${err.shortMessage}`);
-    logger.error(
-      `Tried calling ${relayerAddress} from signer wallet ${
-        (wallet.account?.address as string | undefined) ?? "<undefined>"
-      }`,
+    const signerAddress =
+      (wallet.account?.address as string | undefined) ?? "<undefined>";
+    return await handleNonRevertError(
+      relayerAddress,
+      rateFeedName,
+      signerAddress,
+      isRetryAttempt,
+      err,
+      logger,
     );
-
-    return false;
   }
 }
 
@@ -151,6 +150,36 @@ async function isContract(address: string): Promise<boolean> {
   return isContract;
 }
 
+async function submitTx(
+  relayerContract: RelayerContract,
+  client: PublicClient,
+  isRetryAttempt: boolean,
+  logger: Logger,
+): Promise<boolean> {
+  await relayerContract.simulate.relay();
+
+  const gasParams = await client.estimateFeesPerGas();
+  if (isRetryAttempt) {
+    // We only re-attempt txs that got stuck in the mempool, so we use 2x the recommended gas in case
+    // that was the issue
+    gasParams.maxFeePerGas *= 2n;
+    gasParams.maxPriorityFeePerGas *= 2n;
+  }
+
+  const hash = await relayerContract.write.relay([], gasParams);
+  const receipt = await publicClient.waitForTransactionReceipt({
+    hash,
+  });
+
+  if (receipt.status !== "success") {
+    logger.error(`Relay tx failed: ${hash}`);
+    return false;
+  }
+
+  logger.info(`Relay succeeded: ${hash}`);
+  return true;
+}
+
 /**
  * If the error was a revert from the contract, it should fall into one of two types:
  *   1. A custom error defined in the relayer contract, i.e. InvalidPrice, TimestampNotNew, etc.
@@ -177,7 +206,8 @@ async function handleContractFunctionRevertError(
     }
     case "InvalidPrice": {
       logger.error("Relay failed. Chainlink price is invalid");
-      await sendDiscordNotification(rateFeedName, revertError);
+      logger.error(JSON.stringify(revertError, null, 2));
+      await sendInvalidPriceNotification(rateFeedName);
       break;
     }
     case "Error": {
@@ -190,5 +220,45 @@ async function handleContractFunctionRevertError(
       );
       break;
     }
+  }
+}
+
+async function handleNonRevertError(
+  relayerAddress: string,
+  rateFeedName: string,
+  signerAddress: string,
+  isRetryAttempt: boolean,
+  err: BaseError,
+  logger: Logger,
+): Promise<boolean> {
+  switch (err.details) {
+    case "insufficient funds for transfer":
+      logger.error(
+        `Relay failed. Looks like the signer address ${signerAddress} doesnt have enough funds for the tx`,
+      );
+      return false;
+    case "replacement transaction underpriced":
+      // Sometimes a tx is broadcasted but not mined and gets stuck in the mempool. In this case, we attempt
+      // a single second relay with a higher gas price to replace the old tx.
+
+      if (isRetryAttempt) {
+        // Already retried once and it didnt work
+        logger.error(
+          `Relay failed. Tx from signer ${signerAddress} remains stuck in the mempool after retrying. Will not retry again.`,
+        );
+        await sendTxStuckNotification(rateFeedName, signerAddress);
+        return false;
+      }
+
+      logger.info(
+        `Relay failed. Looks like a tx from signer ${signerAddress} is stuck in the mempool, will retry once with a higher gas price`,
+      );
+      return await relay(relayerAddress, rateFeedName, logger, true);
+    default:
+      logger.error(
+        `Relay failed with an unknown non-revert error: ${err.shortMessage}`,
+      );
+      logger.error(JSON.stringify(err, null, 2));
+      return false;
   }
 }
