@@ -5,6 +5,7 @@ export interface Env {
   GCP_PROJECT_ID: string;
   NODE_ENV: string;
   RELAYER_MNEMONIC_SECRET_ID: string;
+  REFILLER_PRIVATE_KEY?: string;
 }
 
 const schema: JSONSchemaType<Env> = {
@@ -20,6 +21,7 @@ const schema: JSONSchemaType<Env> = {
     GCP_PROJECT_ID: { type: "string" },
     NODE_ENV: { type: "string" },
     RELAYER_MNEMONIC_SECRET_ID: { type: "string" },
+    REFILLER_PRIVATE_KEY: { type: "string", nullable: true },
   },
 };
 

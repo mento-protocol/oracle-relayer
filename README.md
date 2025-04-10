@@ -176,9 +176,15 @@ For most local `terraform` or `gcloud` problems, your first steps should always 
   - `cache:clear`: Clears local shell script cache and refresh it with current values
   - `generate:env`: Auto-generates/updates a local `.env` required by a locally running cloud function server
   - `todo`: Lists all `TODO` and `FIXME` comments
+  - `get:relayer:signer`: Prints the signer address that calls the relay function on the given ratefeed's relayer contract.
+  - `refill:mainnet` or `refill:alfajores`: Refills all relayer signer addresses with a low balance on the given network
 - **Shell Scripts**
   - `set-up-terraform.sh`: Checks required IAM permissions, provisions terraform providers, modules, and workspaces
   - `check-gcloud-login.sh`: Checks for Google Cloud login and application-default credentials.
+
+## Refilling relayer signer accounts
+
+The relayer signer addresses run out of CELO from time to time and need to be refilled. This can be done by adding a `REFILLER_PRIVATE_KEY` to the `.env` file (e.g. the deployer private key) and running the `refill:mainnet` or `refill:alfajores` script, which will transfer CELO to all signer addresses running low on balance.
 
 ## Updating the Cloud Function
 
