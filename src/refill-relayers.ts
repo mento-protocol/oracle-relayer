@@ -15,14 +15,12 @@ const networks = {
     name: "mainnet",
     chain: celo,
     rpcUrl: "https://forno.celo.org",
-    relayerAddressesFile: "infra/relayer_addresses.json",
     relayerAddressesKey: "prod",
   },
   alfajores: {
     name: "alfajores",
     chain: celoAlfajores,
     rpcUrl: "https://alfajores-forno.celo-testnet.org",
-    relayerAddressesFile: "infra/relayer_addresses.json",
     relayerAddressesKey: "staging",
   },
 } as const;
@@ -53,7 +51,7 @@ async function main() {
 
   const relayerAddressesPath = path.resolve(
     process.cwd(),
-    network.relayerAddressesFile,
+    "infra/relayer_addresses.json",
   );
   const relayerAddressesData = JSON.parse(
     fs.readFileSync(relayerAddressesPath, "utf8"),
