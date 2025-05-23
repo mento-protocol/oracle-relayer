@@ -1,6 +1,7 @@
 resource "local_file" "env_file" {
   filename = "${path.module}/../.env"
   content  = <<-EOT
+    REFILLER_PRIVATE_KEY=
     GCP_PROJECT_ID=${module.oracle_relayer.project_id}
     DISCORD_WEBHOOK_URL_STAGING=${var.discord_webhook_url_staging}
     DISCORD_WEBHOOK_URL_PROD=${var.discord_webhook_url_prod}
