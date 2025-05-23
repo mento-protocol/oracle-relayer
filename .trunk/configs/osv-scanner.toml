@@ -1,0 +1,3 @@
+[[IgnoredVulns]]
+id = "GHSA-cxrh-j4jr-qwg3"
+reason = "Low severity vulnerability in undici that affects certificate handling. The package is used indirectly through discord.js and will be fixed in future updates."
