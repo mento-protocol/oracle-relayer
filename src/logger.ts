@@ -24,16 +24,16 @@ export default function getLogger(
     // Console transport only when running locally, to avoid duplicate logs in GCP
     ...(!isCloudFunction
       ? [
-        new winston.transports.Console({
-          level: "info",
-          format: format.combine(
-            format.timestamp(),
-            format.printf((log) => {
-              return `[${log.level}] ${String(log.timestamp)}: [${rateFeed}] [${network}] ${log.message as string}`;
-            }),
-          ),
-        }),
-      ]
+          new winston.transports.Console({
+            level: "info",
+            format: format.combine(
+              format.timestamp(),
+              format.printf((log) => {
+                return `[${log.level}] ${String(log.timestamp)}: [${rateFeed}] [${network}] ${log.message as string}`;
+              }),
+            ),
+          }),
+        ]
       : []),
   ];
 

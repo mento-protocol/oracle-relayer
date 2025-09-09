@@ -26,10 +26,10 @@ import { relayerAbi } from "./relayer-abi";
 import { deriveRelayerAccount } from "./utils";
 
 const CHAIN_FOR_WORKSPACE: Record<typeof config.WORKSPACE, Chain> = {
-  "prod": celo,
-  "staging": celoAlfajores,
-  "sepolia": celoSepolia
-}
+  prod: celo,
+  staging: celoAlfajores,
+  sepolia: celoSepolia,
+};
 
 // Re-use clients across function invocations to save on initialization time and memory
 let publicClient: PublicClient;

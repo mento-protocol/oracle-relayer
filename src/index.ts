@@ -6,10 +6,10 @@ import type { PubsubData, RelayRequested } from "./types";
 import { getTraceId } from "./utils";
 
 const network = {
-  "prod": "celo",
-  "staging": "alfajores",
-  "sepolia": "celo-sepolia"
-}[config.WORKSPACE]
+  prod: "celo",
+  staging: "alfajores",
+  sepolia: "celo-sepolia",
+}[config.WORKSPACE];
 
 cloudEvent("relay", async (event: CloudEvent<PubsubData>) => {
   const eventData = event.data?.message.data;
