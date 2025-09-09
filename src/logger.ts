@@ -1,5 +1,4 @@
 import { LoggingWinston } from "@google-cloud/logging-winston";
-import type { LogEntry } from "winston";
 import winston, { format } from "winston";
 import config from "./config";
 
@@ -25,16 +24,16 @@ export default function getLogger(
     // Console transport only when running locally, to avoid duplicate logs in GCP
     ...(!isCloudFunction
       ? [
-          new winston.transports.Console({
-            level: "info",
-            format: format.combine(
-              format.timestamp(),
-              format.printf((log: LogEntry) => {
-                return `[${log.level}] ${String(log.timestamp)}: [${rateFeed}] [${network}] ${log.message}`;
-              }),
-            ),
-          }),
-        ]
+        new winston.transports.Console({
+          level: "info",
+          format: format.combine(
+            format.timestamp(),
+            format.printf((log) => {
+              return `[${log.level}] ${String(log.timestamp)}: [${rateFeed}] [${network}] ${log.message as string}`;
+            }),
+          ),
+        }),
+      ]
       : []),
   ];
 

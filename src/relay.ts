@@ -1,5 +1,6 @@
 import type {
   Address,
+  Chain,
   GetContractReturnType,
   PublicClient,
   WalletClient,
@@ -12,7 +13,7 @@ import {
   getContract,
   http,
 } from "viem";
-import { celo, celoAlfajores } from "viem/chains";
+import { celo, celoAlfajores, celoSepolia } from "viem/chains";
 
 import type { Logger } from "winston";
 import config from "./config";
@@ -24,7 +25,11 @@ import getSecret from "./get-secret";
 import { relayerAbi } from "./relayer-abi";
 import { deriveRelayerAccount } from "./utils";
 
-const isMainnet = config.NODE_ENV !== "development";
+const CHAIN_FOR_WORKSPACE: Record<typeof config.WORKSPACE, Chain> = {
+  "prod": celo,
+  "staging": celoAlfajores,
+  "sepolia": celoSepolia
+}
 
 // Re-use clients across function invocations to save on initialization time and memory
 let publicClient: PublicClient;
@@ -105,7 +110,7 @@ function getOrCreatePublicClient(): PublicClient {
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!publicClient) {
     publicClient = createPublicClient({
-      chain: isMainnet ? celo : celoAlfajores,
+      chain: CHAIN_FOR_WORKSPACE[config.WORKSPACE],
       transport: http(),
       // NOTE: viem's typescript support is super annoying, couldn't figure out how to make this work without the cast
     }) as unknown as PublicClient;
@@ -123,7 +128,7 @@ async function getOrCreateWalletClient(
     const mnemonic = await getSecret(config.RELAYER_MNEMONIC_SECRET_ID);
     const newWalletClient = createWalletClient({
       account: deriveRelayerAccount(mnemonic, rateFeedName),
-      chain: isMainnet ? celo : celoAlfajores,
+      chain: CHAIN_FOR_WORKSPACE[config.WORKSPACE],
       transport: http(),
     });
     walletClients.set(rateFeedName, newWalletClient);
