@@ -94,9 +94,9 @@ metrics:
     # NOTE: We filtered out derived CELO rate feeds like 'CELOPHP' here because we typically don't add breakers for them
     variants:
 ${relayers
-      .map(({ rateFeed }) => `      - [${rateFeed}]`)
-      .filter((rateFeed) => !rateFeed.includes("CELO"))
-      .join("\n")}
+  .map(({ rateFeed }) => `      - [${rateFeed}]`)
+  .filter((rateFeed) => !rateFeed.includes("CELO"))
+  .join("\n")}
 
   # Checks for rate feed freshness
   - source: SortedOracles.isOldestReportExpired(address rateFeed)(bool,address)
