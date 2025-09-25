@@ -6,7 +6,6 @@ set -u          # Treat unset variables as an error when substituting
 # If .env exists, source it
 if [[ -f .env ]]; then
 	# We know at this point that .env exists, so we can safely source it
-	# trunk-ignore(shellcheck/SC1091)
 	source .env
 	# Check if RELAYER_MNEMONIC_SECRET_ID is set, if not, regenerate .env
 	if [[ -z ${RELAYER_MNEMONIC_SECRET_ID} ]]; then
@@ -14,7 +13,6 @@ if [[ -f .env ]]; then
 		npm run generate:env
 
 		# We know at this point that .env exists because the npm task created it (or failed with an error), so we can safely source it
-		# trunk-ignore(shellcheck/SC1091)
 		source .env
 	fi
 
