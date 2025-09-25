@@ -9,8 +9,8 @@ set_project_id() {
 	printf ' \033[1m%s\033[0m\n' "${workspace}"
 
 	# Ensure workspace is either 'staging' or 'prod'
-	if [[ ${workspace} != "staging" && ${workspace} != "prod" ]]; then
-		echo "Error: Terraform Workspace must be either 'staging' or 'prod'."
+	if [[ ${workspace} != "staging" && ${workspace} != "prod" && ${workspace} != "sepolia" ]]; then
+		echo "Error: Terraform Workspace must be either 'staging', 'prod' or 'sepolia'."
 		echo "Please run 'terraform workspace select <workspace>' in ./infra to switch workspaces."
 		exit 1
 	fi

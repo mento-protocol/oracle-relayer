@@ -1,5 +1,4 @@
 import { LoggingWinston } from "@google-cloud/logging-winston";
-import type { LogEntry } from "winston";
 import winston, { format } from "winston";
 import config from "./config";
 
@@ -29,8 +28,8 @@ export default function getLogger(
             level: "info",
             format: format.combine(
               format.timestamp(),
-              format.printf((log: LogEntry) => {
-                return `[${log.level}] ${String(log.timestamp)}: [${rateFeed}] [${network}] ${log.message}`;
+              format.printf((log) => {
+                return `[${log.level}] ${String(log.timestamp)}: [${rateFeed}] [${network}] ${log.message as string}`;
               }),
             ),
           }),

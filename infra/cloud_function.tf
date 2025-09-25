@@ -29,7 +29,8 @@ resource "google_cloudfunctions2_function" "relay" {
       RELAYER_MNEMONIC_SECRET_ID    = google_secret_manager_secret.relayer_mnemonic.secret_id
       # Logs execution ID for easier debugging => https://cloud.google.com/functions/docs/monitoring/logging#viewing_runtime_logs
       LOG_EXECUTION_ID = "true"
-      NODE_ENV         = terraform.workspace == "staging" ? "development" : "production"
+      NODE_ENV         = terraform.workspace == "prod" ? "production" : "development"
+      WORKSPACE        = terraform.workspace
     }
   }
 

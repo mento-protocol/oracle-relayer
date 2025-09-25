@@ -5,7 +5,7 @@ import getSecret from "../src/get-secret";
 import { deriveRelayerAccount, toRateFeedId } from "../src/utils";
 
 const RelayerAddresses = RelayerAddressesJson as {
-  [env in "staging" | "prod"]: Record<string, Address>;
+  [env in "staging" | "prod" | "sepolia"]: Record<string, Address>;
 };
 
 type Environment = keyof typeof RelayerAddresses;
@@ -65,7 +65,7 @@ const createRelayer = <T extends Environment>(
   return {
     env,
     rateFeed: formattedRateFeed,
-    rateFeedId: toRateFeedId(`relayed:${formattedRateFeed}`),
+    rateFeedId: toRateFeedId(formattedRateFeed),
     signerAddress: deriveRelayerAccount(mnemonic, rateFeedWithSlash).address,
     relayerAddress: RelayerAddresses[env][rateFeed] as Address,
   };
@@ -80,7 +80,7 @@ function generateConfigYaml(relayers: Relayer[]): string {
 global:
   vars:
     # Rate Feed IDs
-${relayers.map(({ rateFeed, rateFeedId }) => `    'relayed:${rateFeed}': '${rateFeedId}'`).join("\n")}
+${relayers.map(({ rateFeed, rateFeedId }) => `    '${rateFeed}': '${rateFeedId}'`).join("\n")}
 
     # Relayer Signer Wallets
 ${relayers.map(({ rateFeed, signerAddress }) => `    RelayerSigner${rateFeed}: '${signerAddress}'`).join("\n")}
@@ -91,11 +91,11 @@ metrics:
     schedule: 0/10 * * * * *
     type: gauge
     chains: all
-    # NOTE: We filtered out derived CELO rate feeds like 'relayed:CELOPHP' here because we typically don't add breakers for them
+    # NOTE: We filtered out derived CELO rate feeds like 'CELOPHP' here because we typically don't add breakers for them
     variants:
 ${relayers
-  .map(({ rateFeed }) => `      - [relayed:${rateFeed}]`)
-  .filter((rateFeed) => !rateFeed.includes("relayed:CELO"))
+  .map(({ rateFeed }) => `      - [${rateFeed}]`)
+  .filter((rateFeed) => !rateFeed.includes("CELO"))
   .join("\n")}
 
   # Checks for rate feed freshness
@@ -104,7 +104,7 @@ ${relayers
     type: gauge
     chains: all
     variants:
-${relayers.map(({ rateFeed }) => `      - [relayed:${rateFeed}]`).join("\n")}
+${relayers.map(({ rateFeed }) => `      - [${rateFeed}]`).join("\n")}
 
   # Checks if the signer wallets have enough CELO to pay for the relay() transactions
   - source: CELOToken.balanceOf(address owner)(uint256)

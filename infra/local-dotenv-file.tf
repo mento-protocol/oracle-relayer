@@ -7,5 +7,6 @@ resource "local_file" "env_file" {
     DISCORD_WEBHOOK_URL_PROD=${var.discord_webhook_url_prod}
     DISCORD_WEBHOOK_URL_SECRET_ID=${var.discord_webhook_url_secret_id}-${terraform.workspace}
     RELAYER_MNEMONIC_SECRET_ID=${var.relayer_mnemonic_secret_id}
+    WORKSPACE=${terraform.workspace}
   EOT
 }
