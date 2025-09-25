@@ -1,5 +1,5 @@
 import { createPublicClient, createWalletClient, http, parseEther } from "viem";
-import { celo, celoAlfajores } from "viem/chains";
+import { celo, celoAlfajores, celoSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import * as fs from "fs";
 import * as path from "path";
@@ -22,6 +22,12 @@ const networks = {
     chain: celoAlfajores,
     rpcUrl: "https://alfajores-forno.celo-testnet.org",
     relayerAddressesKey: "staging",
+  },
+  "celo-sepolia": {
+    name: "celo-sepolia",
+    chain: celoSepolia,
+    rpcUrl: "https://forno.celo-sepolia.celo-testnet.org",
+    relayerAddressesKey: "sepolia",
   },
 } as const;
 
