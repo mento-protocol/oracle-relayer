@@ -23,7 +23,7 @@ How to deploy the entire off-chain oracle relayer infrastructure from scratch.
 
 #### Using Service Account Impersonation (recommended)
 
-The project is preconfigured to impersonate our shared terraform service account (see `./infra/versions.tf`).
+The project is preconfigured to impersonate our shared terraform service account (see [`./infra/versions.tf`](./infra/versions.tf)).
 The only permission you will need on your own gcloud user account is `roles/iam.serviceAccountTokenCreator` to allow you to impersonate our shared terraform service account.
 
 #### Using Your Own Gcloud User Account (not recommended)
@@ -40,7 +40,7 @@ If for whatever reason service account impersonation doesn't work, you'll need a
 
 1. Run `./bin/set-up-terraform.sh` to check required permissions and provision all required terraform providers, modules, and workspaces
 
-1. **Deploy the project to staging via `npm run deploy:staging`** (which uses `terraform apply`)
+1. **Deploy the celo-sepolia project via `npm run deploy:celo-sepolia`** (which uses `terraform apply`)
 
    - You will see an overview of all resources to be created. Review them if you like and then type "Yes" to confirm.
    - This command can take up to 10 minutes because it does a lot of work creating and configuring all defined Google Cloud Resources
@@ -54,7 +54,7 @@ If for whatever reason service account impersonation doesn't work, you'll need a
 
    ```sh
    # This script will also cache some gcloud values into a local file which speeds up tasks like `npm run logs`
-   ./bin/get-project-vars.sh
+   npm run cache:clear
    ```
 
 1. Check that everything worked as expected
@@ -67,11 +67,11 @@ If for whatever reason service account impersonation doesn't work, you'll need a
    npm run logs:url
    ```
 
-1. **Now deploy the project to production via `npm run deploy:prod`** (which uses `terraform apply`)
+1. **Now deploy the celo project via `npm run deploy:celo`** (which uses `terraform apply`)
 
-1. Update your local `gcloud` context to production via `./bin/get-project-vars.sh` again
+1. Update your local `gcloud` context to celo via `./bin/get-project-vars.sh` again
 
-1. And check this also worked via `npm run logs:prod`
+1. And check this also worked via `npm run celo && npm run logs`
 
 ## Debugging Problems
 
@@ -79,12 +79,12 @@ If for whatever reason service account impersonation doesn't work, you'll need a
 
 For most problems, you'll likely want to check the cloud function logs first.
 
-- `npm run logs` will print the latest 50 staging log entries into your local terminal for quick and easy access
-- `npm run logs:url` will print the URL to the staging function logs in the Google Cloud Console for full access
+- `npm run logs` will print the latest 50 log entries into your local terminal for quick and easy access
+- `npm run logs:url` will print the URL to the function logs in the Google Cloud Console for full access
 
 ## Teardown
 
 Note: You might run into permission issues here, especially around deleting the associated billing account resources. I didn't have time to figure out the minimum set of permissions required to delete this project so the easiest would be to let an organization owner (i.e. Bogdan) run this with full permissions if you face any issues.
 
-1. Run `npm run destroy:staging` to delete the entire staging environment from google cloud
-1. Run `npm run destroy:prod` to delete the entire production environment from google cloud
+1. Run `npm run destroy:celo-sepolia` to delete the entire celo-sepolia environment from google cloud
+1. Run `npm run destroy:celo` to delete the entire celo environment from google cloud

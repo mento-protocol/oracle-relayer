@@ -29,8 +29,8 @@ resource "google_cloudfunctions2_function" "relay" {
       RELAYER_MNEMONIC_SECRET_ID    = google_secret_manager_secret.relayer_mnemonic.secret_id
       # Logs execution ID for easier debugging => https://cloud.google.com/functions/docs/monitoring/logging#viewing_runtime_logs
       LOG_EXECUTION_ID = "true"
-      NODE_ENV         = terraform.workspace == "prod" ? "production" : "development"
-      WORKSPACE        = terraform.workspace
+      NODE_ENV         = terraform.workspace == "celo" ? "production" : "development"
+      CHAIN            = terraform.workspace
     }
   }
 
@@ -51,6 +51,21 @@ resource "google_cloud_run_service_iam_member" "invoker" {
   member   = "serviceAccount:${module.oracle_relayer.service_account_email}"
 }
 
+# Compute a hash of the source files to detect actual changes
+# This is more reliable than using the zip's SHA256 which includes metadata
+locals {
+  source_files = fileset("${path.module}/..", "src/**")
+  package_files = [
+    "${path.module}/../package.json",
+    "${path.module}/../package-lock.json"
+  ]
+  # Create a hash of all source files and package files
+  source_hash = md5(join("", [
+    for f in sort(concat(tolist(local.source_files), local.package_files)) :
+    fileexists("${path.module}/../${f}") ? filemd5("${path.module}/../${f}") : filemd5(f)
+  ]))
+}
+
 # Zip the Cloud Function source code
 data "archive_file" "function_source" {
   type        = "zip"
@@ -58,7 +73,30 @@ data "archive_file" "function_source" {
   output_path = "${path.module}/../function-source.zip"
 
   # Not sure if this is stricly necessary when defining a .gcloudignore file, but better safe than sorry
-  excludes = [".env", ".env.example", ".env.yaml", ".git", ".gitignore", ".trunk", ".vscode", "README.md", "dist", "commitlint.config.mjs", "eslint.config.mjs", "infra", "node_modules", "src/aegis-export.ts"]
+  excludes = [".cursor",
+    ".DS_Store",
+    ".env",
+    ".env.example",
+    ".env.yaml",
+    ".git",
+    ".github",
+    ".gitignore",
+    ".project_vars_cache",
+    ".terraform",
+    ".terraform.lock.hcl",
+    ".trunk",
+    ".vscode",
+    "DEPLOY_FROM_SCRATCH.md",
+    "README.md",
+    "bin",
+    "commitlint.config.mjs",
+    "dist",
+    "eslint.config.mjs",
+    "function-source.zip",
+    "infra",
+    "node_modules",
+    "src/aegis-export.ts",
+  ]
 }
 
 # Storage Bucket for the Cloud Function source code
@@ -80,7 +118,9 @@ resource "google_storage_bucket" "relay_function" {
 
 # Upload the Cloud Function source code to the Storage Bucket
 resource "google_storage_bucket_object" "source_code" {
-  name   = "function-source-${terraform.workspace}-${data.archive_file.function_source.output_md5}.zip"
+  # Use our custom source hash instead of the archive's SHA256
+  # This ensures the function only redeploys when actual source files change
+  name   = "function-source-${local.source_hash}.zip"
   bucket = google_storage_bucket.relay_function.name
   source = data.archive_file.function_source.output_path
 }

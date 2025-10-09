@@ -1,33 +1,21 @@
-import { createPublicClient, createWalletClient, http, parseEther } from "viem";
-import { celo, celoAlfajores, celoSepolia } from "viem/chains";
-import { privateKeyToAccount } from "viem/accounts";
 import * as fs from "fs";
 import * as path from "path";
+import { createPublicClient, createWalletClient, http, parseEther } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { celo, celoSepolia } from "viem/chains";
 import { config } from "./config";
-import { deriveRelayerAccount } from "./utils";
 import getSecret from "./get-secret";
+import { deriveRelayerAccount } from "./utils";
 
 const MIN_BALANCE_THRESHOLD = 5;
 const TRANSFER_AMOUNT = 50;
 
 const networks = {
-  mainnet: {
-    name: "mainnet",
+  celo: {
     chain: celo,
-    rpcUrl: "https://forno.celo.org",
-    relayerAddressesKey: "prod",
-  },
-  alfajores: {
-    name: "alfajores",
-    chain: celoAlfajores,
-    rpcUrl: "https://alfajores-forno.celo-testnet.org",
-    relayerAddressesKey: "staging",
   },
   "celo-sepolia": {
-    name: "celo-sepolia",
     chain: celoSepolia,
-    rpcUrl: "https://forno.celo-sepolia.celo-testnet.org",
-    relayerAddressesKey: "sepolia",
   },
 } as const;
 
@@ -48,12 +36,12 @@ function convertRateFeedFormat(rateFeedKey: string): string {
 async function main() {
   const networkArg = process.argv[2];
   if (!networkArg || !(networkArg in networks)) {
-    console.log("Usage: pnpm refill:mainnet or pnpm refill:alfajores");
+    console.log("Usage: pnpm refill:celo or pnpm refill:celo-sepolia");
     process.exit(1);
   }
 
   const network = networks[networkArg as NetworkType];
-  console.log(`Refilling relayer accounts on ${network.name}...`);
+  console.log(`Refilling relayer accounts on ${networkArg}...`);
 
   const relayerAddressesPath = path.resolve(
     process.cwd(),
@@ -62,7 +50,7 @@ async function main() {
   const relayerAddressesData = JSON.parse(
     fs.readFileSync(relayerAddressesPath, "utf8"),
   ) as Record<string, Record<string, string>>;
-  const relayerAddresses = relayerAddressesData[network.relayerAddressesKey];
+  const relayerAddresses = relayerAddressesData[networkArg];
 
   const privateKey = process.env.REFILLER_PRIVATE_KEY;
   if (!privateKey) {
@@ -75,12 +63,12 @@ async function main() {
   const account = privateKeyToAccount(`0x${privateKey}`);
   const publicClient = createPublicClient({
     chain: network.chain,
-    transport: http(network.rpcUrl),
+    transport: http(network.chain.rpcUrls.default.http[0]),
   });
   const walletClient = createWalletClient({
     account,
     chain: network.chain,
-    transport: http(network.rpcUrl),
+    transport: http(network.chain.rpcUrls.default.http[0]),
   });
 
   const mnemonic = await getSecret(config.RELAYER_MNEMONIC_SECRET_ID);

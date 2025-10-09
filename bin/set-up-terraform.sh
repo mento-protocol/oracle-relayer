@@ -78,23 +78,23 @@ set_up_terraform() {
 		fi
 	}
 
-	create_workspace_if_not_exists "staging"
+	create_workspace_if_not_exists "celo-sepolia"
 	printf "\n"
-	create_workspace_if_not_exists "prod"
+	create_workspace_if_not_exists "celo"
 
-	echo "🌀 Switching to staging workspace... "
-	terraform workspace select staging
-	echo "✅ Switched to staging workspace."
+	echo "🌀 Switching to celo-sepolia workspace... "
+	terraform workspace select celo-sepolia
+	echo "✅ Switched to celo-sepolia workspace."
 
-	# If we need separate tfvars files for staging and prod, we can create them here.
+	# If we need separate tfvars files for celo-sepolia and celo, we can create them here.
 	# We would then extend our "npm run deploy" scripts to include a -var-file flag:
-	#   `terraform apply -var-file="staging.tfvars"`
+	#   `terraform apply -var-file="celo-sepolia.tfvars"`
 	# Note that a terraform.tfvars file will always be loaded implicitly, so it can
-	# act like a shared file between staging and prod.
+	# act like a shared file between celo-sepolia and celo.
 	#
-	# printf "Creating staging.tfvars and prod.tfvars files..."
-	# touch staging.tfvars
-	# touch prod.tfvars
+	# printf "Creating celo-sepolia.tfvars and celo.tfvars files..."
+	# touch celo-sepolia.tfvars
+	# touch celo.tfvars
 	# printf " ✅\n"
 }
 

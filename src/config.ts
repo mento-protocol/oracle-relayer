@@ -5,7 +5,7 @@ export interface Env {
   GCP_PROJECT_ID: string;
   NODE_ENV: string;
   RELAYER_MNEMONIC_SECRET_ID: string;
-  WORKSPACE: "prod" | "staging" | "sepolia";
+  CHAIN: "celo" | "celo-sepolia";
 }
 
 const schema: JSONSchemaType<Env> = {
@@ -15,14 +15,14 @@ const schema: JSONSchemaType<Env> = {
     "GCP_PROJECT_ID",
     "NODE_ENV",
     "RELAYER_MNEMONIC_SECRET_ID",
-    "WORKSPACE",
+    "CHAIN",
   ],
   properties: {
     DISCORD_WEBHOOK_URL_SECRET_ID: { type: "string" },
     GCP_PROJECT_ID: { type: "string" },
     NODE_ENV: { type: "string" },
     RELAYER_MNEMONIC_SECRET_ID: { type: "string" },
-    WORKSPACE: { type: "string", enum: ["prod", "staging", "sepolia"] },
+    CHAIN: { type: "string", enum: ["celo", "celo-sepolia"] },
   },
 };
 

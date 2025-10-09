@@ -3,19 +3,14 @@ set -e          # Fail on any error
 set -o pipefail # Ensure piped commands propagate exit codes properly
 set -u          # Treat unset variables as an error when substituting
 
-print_usage() {
-	echo "Usage: $0 <rate_feed_name> <relayer_address>"
-	echo "Example: $0 'PHP/USD' '0x9C65c22C96391b0FC09122B86908aD680A8F0FE0'"
-	exit 1
-}
-
-# Check if both parameters are provided
+# If no parameters are provided, use default values
 if [[ $# -ne 2 ]]; then
-	print_usage
+	rate_feed_name="PHP/USD"
+	relayer_address="0x3bC1f31B8150dc65B9fB9E8B69604C40EaA97C2F"
+else
+	rate_feed_name="$1"
+	relayer_address="$2"
 fi
-
-rate_feed_name="$1"
-relayer_address="$2"
 
 # Manually triggers a local Cloud Function by faking a Pubsub event.
 test_local_function() {

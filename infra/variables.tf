@@ -1,7 +1,7 @@
 variable "project_name" {
   type        = string
   description = "Google Cloud Project Name of the Oracle Relayer Project"
-  # Can be at most 26 characters long (30 characters - 4 characters for the auto-generated suffix)
+  # Can be at most 17 characters long (30 chars - 8 for chain ID - 1 for hyphen - 4 for random suffix)
   default = "oracle-relayer"
 }
 
@@ -46,15 +46,15 @@ variable "discord_webhook_url_secret_id" {
 }
 
 # You can look this up either on the Discord Channel settings, or fetch it from Secret Manager via:
-#  `gcloud secrets versions access latest --secret discord-webhook-url-staging`
-variable "discord_webhook_url_staging" {
+#  `gcloud secrets versions access latest --secret discord-webhook-url-celo-sepolia`
+variable "discord_webhook_url_celo_sepolia" {
   type      = string
   sensitive = true
 }
 
 # You can look this up either on the Discord Channel settings, or fetch it from Secret Manager via:
-#  `gcloud secrets versions access latest --secret discord-webhook-url-prod`
-variable "discord_webhook_url_prod" {
+#  `gcloud secrets versions access latest --secret discord-webhook-url-celo`
+variable "discord_webhook_url_celo" {
   type      = string
   sensitive = true
 }

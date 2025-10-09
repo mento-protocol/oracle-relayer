@@ -23,7 +23,7 @@ transform_to_scheduler_id() {
 	transformed_name=$(echo "${rate_feed_description}" | tr '[:upper:]' '[:lower:]' | tr '/' '_')
 
 	# Form the scheduler job name incl. the rate feed description
-	echo "request-relay-${transformed_name}-staging"
+	echo "request-relay-${transformed_name}"
 }
 
 # Validate rate feed description

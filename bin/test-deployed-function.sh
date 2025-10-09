@@ -4,12 +4,12 @@ set -o pipefail # Ensure piped commands propagate exit codes properly
 set -u          # Treat unset variables as an error when substituting
 
 # Manually triggers a deployed Cloud Function by emitting a Pubsub event.
-# Requires an environment arg (e.g., staging, production).
+# Requires an environment arg (e.g., celo-sepolia, celo).
 test_deployed_function() {
 	# Check if environment and rate feed ID parameters are provided
 	if [[ $# -ne 2 ]]; then
-		echo "Usage: $0 <env> <rate_feed_id>"
-		echo "Example: $0 staging PHP/USD"
+		echo "Usage: $0 <env> <rate_feed_description>"
+		echo "Example: $0 celo-sepolia PHP/USD"
 		exit 1
 	fi
 	env=$1
@@ -37,7 +37,7 @@ test_deployed_function() {
 		exit 1
 	fi
 
-	address=$(jq -r ".${env}.\"${json_key}\"" "${json_file}")
+	address=$(jq -r ".\"${env}\".\"${json_key}\"" "${json_file}")
 
 	if [[ ${address} == "null" ]]; then
 		echo "❌ Error: Address not found for rate feed ID '${rate_feed_id}' in environment '${env}'."
