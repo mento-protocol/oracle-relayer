@@ -85,11 +85,11 @@
    # To fetch secrets, you'll need the `Secret Manager Secret Accessor` IAM role assigned to your Google Cloud Account
    relayer_mnemonic      = "<relayer-mnemonic>"
 
-   # Get it via `gcloud secrets versions access latest --secret discord_webhook_url_celo_sepolia`
+   # Get it via `gcloud secrets versions access latest --secret discord-webhook-url-celo-sepolia`
    # Note that the above secret only exists in the oracle-relayer-celo-sepolia GCP project
    discord_webhook_url_celo_sepolia      = "<celo-sepolia-webhook-url>"
 
-   # Get it via `gcloud secrets versions access latest --secret discord_webhook_url_celo`
+   # Get it via `gcloud secrets versions access latest --secret discord-webhook-url-celo`
    # Note that the above secret only exists in the oracle-relayer-celo GCP project
    discord_webhook_url_celo      = "<celo-webhook-url>"
 

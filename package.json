@@ -30,7 +30,6 @@
     "plan:celo-sepolia": "terraform -chdir=infra workspace select celo-sepolia && terraform -chdir=infra plan",
     "refill:celo": "NODE_ENV=development npx ts-node ./src/refill-relayers.ts celo",
     "refill:celo-sepolia": "NODE_ENV=development npx ts-node ./src/refill-relayers.ts celo-sepolia",
-    "sepolia": "npm run celo-sepolia",
     "prestart": "npm run build",
     "start": "NODE_ENV=development functions-framework --target=relay",
     "test": "npm run test:local",

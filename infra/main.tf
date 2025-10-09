@@ -7,6 +7,13 @@ locals {
     "celo"         = "42220"    # Celo Mainnet
     "celo-sepolia" = "11142220" # Celo Sepolia (Testnet)
   }
+
+  # Validate workspace exists
+  chain_id = lookup(
+    local.workspace_to_chain_id,
+    terraform.workspace,
+    "INVALID_WORKSPACE" # Force error on unknown workspace
+  )
 }
 
 provider "google" {
@@ -34,7 +41,7 @@ module "oracle_relayer" {
   name   = "${var.project_name}-${terraform.workspace}"
   org_id = var.org_id
   # We use chain IDs (typically shorter) instead of chain names in the project ID to avoid the 30 character length limit
-  project_id        = "${var.project_name}-${local.workspace_to_chain_id[terraform.workspace]}"
+  project_id        = "${var.project_name}-${local.chain_id}"
   random_project_id = true
   source            = "git::https://github.com/terraform-google-modules/terraform-google-project-factory.git?ref=fdc4307ae52565d2385525690de851edb8e38d72" # commit hash of v18.1.0
 
