@@ -14,7 +14,7 @@ import getSecret from "./get-secret";
 import { deriveRelayerAccount } from "./utils";
 
 const MIN_BALANCE_THRESHOLD = 5;
-const TRANSFER_AMOUNT = 50;
+const TRANSFER_AMOUNT = 100;
 
 const chains: Record<string, Chain> = {
   celo,
