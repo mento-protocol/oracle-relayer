@@ -5,7 +5,7 @@ import getSecret from "../src/get-secret";
 import { deriveRelayerAccount, toRateFeedId } from "../src/utils";
 
 const RelayerAddresses = RelayerAddressesJson as {
-  [env in "staging" | "prod" | "sepolia"]: Record<string, Address>;
+  [env in "celo" | "celo-sepolia"]: Record<string, Address>;
 };
 
 type Environment = keyof typeof RelayerAddresses;

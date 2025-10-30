@@ -67,4 +67,3 @@ actions:
 tools:
   disabled:
     - commitizen
-  enabled:

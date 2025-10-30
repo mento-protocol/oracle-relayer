@@ -4,11 +4,18 @@ set -o pipefail # Ensure piped commands propagate exit codes properly
 set -u          # Treat unset variables as an error when substituting
 
 # Prints the log explorer URL for the Cloud Function and displays it in the terminal.
-# Requires an environment arg (e.g., staging, production).
+# Usage: get-function-logs-url.sh [rate_feed]
+# Example with rate feed filter: get-function-logs-url.sh CELO/USD
 get_function_logs_url() {
 	# Load the current project variables
 	script_dir=$(dirname "$0")
 	source "${script_dir}/get-project-vars.sh"
+
+	# Optional rate feed filter (first argument)
+	rate_feed="${1-}"
+
+	# URL-encode the rate feed (replace / with %2F)
+	rate_feed_encoded=$(echo "${rate_feed}" | sed 's/\//%2F/g')
 
 	# Get time 1 hour ago in UTC
 	start_time=$(date -u -v-1H +"%Y-%m-%dT%H:%M:%S.000Z")
@@ -16,33 +23,26 @@ get_function_logs_url() {
 	# Get current time in UTC
 	end_time=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
 
-	logs_explorer_url=$(
-		cat <<EOF | tr -d '\n' | sed 's/[[:space:]]//g'
-https://console.cloud.google.com/logs/query;
-query=%2528
-	resource.type%20%3D%20%22cloud_function%22%0A
-	resource.labels.function_name%20%3D%20%22${function_name}%22%0A
-	resource.labels.region%20%3D%20%22${region}%22%2529%0A%20OR%20%0A%2528
-	resource.type%20%3D%20%22cloud_run_revision%22%0A
-	resource.labels.service_name%20%3D%20%22${function_name}%22%0A
-	resource.labels.location%20%3D%20%22${region}%22%2529%0A%20
-	severity%3E%3DDEFAULT;
-storageScope=project;
-summaryFields=labels%252FrateFeed,labels%252Fnetwork:false:32:beginning;
-startTime=${start_time};
-endTime=${end_time};
-?project=${project_id}
+	# Build the query with optional rate feed filter
+	if [[ -n ${rate_feed} ]]; then
+		logs_explorer_url=$(
+			cat <<EOF | tr -d '\n' | sed 's/[[:space:]]//g'
+https://console.cloud.google.com/logs/query;query=resource.labels.service_name%20%3D%20%22${function_name}%22%20AND%20labels.rateFeed%20%3D%20%22${rate_feed_encoded}%22;summaryFields=labels%252FrateFeed,labels%252Fchain:false:32:beginning;startTime=${start_time};endTime=${end_time}?project=${project_id}
 EOF
-	)
-
-	printf '\n\033[1mLogs Explorer URL\033[0m - Your function logs in the GCP Logs Explorer, usually this is what you want.\n%s\n' "${logs_explorer_url}"
-
-	function_logs_url="https://console.cloud.google.com/functions/details/${region}/${function_name}?project=${project_id}&tab=logs "
-	printf '\n\033[1mCloud Function Logs\033[0m - A simplified logs view..\n%s\n' "${function_logs_url}"
+		)
+		printf '\n\033[1mLogs Explorer URL (filtered by %s)\033[0m\n%s\n' "${rate_feed}" "${logs_explorer_url}"
+	else
+		logs_explorer_url=$(
+			cat <<EOF | tr -d '\n' | sed 's/[[:space:]]//g'
+https://console.cloud.google.com/logs/query;query=resource.labels.service_name%20%3D%20%22${function_name}%22;storageScope=project;summaryFields=labels%252FrateFeed,labels%252Fchain:false:32:beginning;startTime=${start_time};endTime=${end_time}?project=${project_id}
+EOF
+		)
+		printf '\n\033[1mLogs Explorer URL\033[0m - Your function logs in the GCP Logs Explorer, usually this is what you want.\n%s\n' "${logs_explorer_url}"
+	fi
 
 	echo ""
 
-	cloud_run_logs_url="https://console.cloud.google.com/run/detail/${region}/${function_name}/logs?${project_id}"
+	cloud_run_logs_url="https://console.cloud.google.com/run/detail/${region}/${function_name}/logs?project=${project_id}"
 	printf '\n\033[1mCloud Run Logs\033[0m - The underlying Cloud Run logs, mainly for problems occurring during startup of the function.\n%s\n' "${cloud_run_logs_url}"
 }
 

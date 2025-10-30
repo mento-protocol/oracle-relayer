@@ -1,15 +1,8 @@
 import { cloudEvent, CloudEvent } from "@google-cloud/functions-framework";
-import config from "./config";
 import getLogger from "./logger";
 import relay from "./relay";
 import type { PubsubData, RelayRequested } from "./types";
 import { getTraceId } from "./utils";
-
-const network = {
-  prod: "celo",
-  staging: "alfajores",
-  sepolia: "celo-sepolia",
-}[config.WORKSPACE];
 
 cloudEvent("relay", async (event: CloudEvent<PubsubData>) => {
   const eventData = event.data?.message.data;
@@ -44,7 +37,7 @@ cloudEvent("relay", async (event: CloudEvent<PubsubData>) => {
   }
 
   const traceId = getTraceId(event);
-  const logger = getLogger(rateFeedName, network, traceId);
+  const logger = getLogger(rateFeedName, traceId);
   const ok = await relay(relayerAddress, rateFeedName, logger);
 
   if (!ok) {

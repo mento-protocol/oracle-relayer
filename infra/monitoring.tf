@@ -31,7 +31,7 @@ resource "google_monitoring_notification_channel" "discord_channel" {
   type         = "webhook_tokenauth"
 
   labels = {
-    url = terraform.workspace == "prod" ? var.discord_webhook_url_prod : var.discord_webhook_url_staging
+    url = terraform.workspace == "celo" ? var.discord_webhook_url_celo : var.discord_webhook_url_celo_sepolia
   }
 }
 
