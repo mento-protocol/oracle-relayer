@@ -8,9 +8,9 @@ set_project_id() {
 	chain=$(terraform -chdir=infra workspace show)
 	printf ' \033[1m%s\033[0m\n' "${chain}"
 
-	# Ensure workspace is either 'celo-sepolia' or 'celo'
-	if [[ ${chain} != "celo-sepolia" && ${chain} != "celo" ]]; then
-		echo "Error: Terraform Workspace must be either 'celo-sepolia' or 'celo'."
+	# Ensure workspace is a known chain
+	if [[ ${chain} != "celo-sepolia" && ${chain} != "celo" && ${chain} != "monad-testnet" ]]; then
+		echo "Error: Terraform Workspace must be 'celo', 'celo-sepolia', or 'monad-testnet'."
 		echo "Please run 'terraform workspace select <workspace>' in ./infra to switch workspaces."
 		exit 1
 	fi

@@ -4,8 +4,9 @@ locals {
   # Map workspace names to chain IDs for use in project naming
   # This keeps the project name under 30 chars while allowing devs to use friendly workspace names
   workspace_to_chain_id = {
-    "celo"         = "42220"    # Celo Mainnet
-    "celo-sepolia" = "11142220" # Celo Sepolia (Testnet)
+    "celo"          = "42220"    # Celo Mainnet
+    "celo-sepolia"  = "11142220" # Celo Sepolia (Testnet)
+    "monad-testnet" = "10143"    # Monad Testnet
   }
 
   # Validate workspace exists

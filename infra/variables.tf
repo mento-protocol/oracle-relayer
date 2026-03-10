@@ -61,6 +61,7 @@ variable "discord_webhook_url_celo" {
 
 
 
+
 #####################################################################################
 # The below are mainly kept in vars so we can read them easier in the shell scripts #
 #####################################################################################

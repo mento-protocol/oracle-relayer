@@ -5,7 +5,7 @@ export interface Env {
   GCP_PROJECT_ID: string;
   NODE_ENV: string;
   RELAYER_MNEMONIC_SECRET_ID: string;
-  CHAIN: "celo" | "celo-sepolia";
+  CHAIN: "celo" | "celo-sepolia" | "monad-testnet";
 }
 
 const schema: JSONSchemaType<Env> = {
@@ -22,7 +22,7 @@ const schema: JSONSchemaType<Env> = {
     GCP_PROJECT_ID: { type: "string" },
     NODE_ENV: { type: "string" },
     RELAYER_MNEMONIC_SECRET_ID: { type: "string" },
-    CHAIN: { type: "string", enum: ["celo", "celo-sepolia"] },
+    CHAIN: { type: "string", enum: ["celo", "celo-sepolia", "monad-testnet"] },
   },
 };
 

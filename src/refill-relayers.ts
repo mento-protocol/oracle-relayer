@@ -8,17 +8,18 @@ import {
   parseEther,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { celo, celoSepolia } from "viem/chains";
+import { celo, celoSepolia, monadTestnet } from "viem/chains";
 import { config } from "./config";
 import getSecret from "./get-secret";
 import { deriveRelayerAccount } from "./utils";
 
 const MIN_BALANCE_THRESHOLD = 5;
-const TRANSFER_AMOUNT = 100;
+const TRANSFER_AMOUNT = 1000;
 
 const chains: Record<string, Chain> = {
   celo,
   "celo-sepolia": celoSepolia,
+  "monad-testnet": monadTestnet,
 } as const;
 
 /**
@@ -98,6 +99,7 @@ async function main() {
           chain,
         });
         await publicClient.waitForTransactionReceipt({ hash });
+        // let hash = "0x1234567890";
 
         console.log(`  Transaction sent: ${hash}`);
         transfersMade.push({

@@ -65,5 +65,10 @@
     "usdt_usd": "0x19ea130846452733ff2359974Cd58984A2e3963D",
     "xof_usd": "0xC22f388810A4183c61Cb8cdd4B20a5015f2398e6",
     "zar_usd": "0x757654C3B851110EEF9304e2297Bd592173Af1e6"
+  },
+  "monad-testnet": {
+    "ausd_usd": "0x73dF2f773cdEeBd33282107c5705E73321Ee0D4d",
+    "gbp_usd": "0xb8433a521881C17c7cf3F45684CdC9cc5918A736",
+    "usdc_usd": "0x34b8E391e26faf1af1c751aa4F6b5E19FBF9190B"
   }
 }

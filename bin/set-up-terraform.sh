@@ -80,6 +80,8 @@ set_up_terraform() {
 
 	create_workspace_if_not_exists "celo-sepolia"
 	printf "\n"
+	create_workspace_if_not_exists "monad-testnet"
+	printf "\n"
 	create_workspace_if_not_exists "celo"
 
 	echo "🌀 Switching to celo-sepolia workspace... "

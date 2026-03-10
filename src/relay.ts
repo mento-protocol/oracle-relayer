@@ -13,7 +13,7 @@ import {
   getContract,
   http,
 } from "viem";
-import { celo, celoSepolia } from "viem/chains";
+import { celo, celoSepolia, monadTestnet } from "viem/chains";
 
 import type { Logger } from "winston";
 import config from "./config";
@@ -28,6 +28,7 @@ import { deriveRelayerAccount } from "./utils";
 const chainMap: Record<typeof config.CHAIN, Chain> = {
   celo: celo,
   "celo-sepolia": celoSepolia,
+  "monad-testnet": monadTestnet,
 };
 
 // Re-use clients across function invocations to save on initialization time and memory
