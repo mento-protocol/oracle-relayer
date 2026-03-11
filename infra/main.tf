@@ -7,6 +7,7 @@ locals {
     "celo"          = "42220"    # Celo Mainnet
     "celo-sepolia"  = "11142220" # Celo Sepolia (Testnet)
     "monad-testnet" = "10143"    # Monad Testnet
+    "monad"         = "143"      # Monad Mainnet
   }
 
   # Validate workspace exists

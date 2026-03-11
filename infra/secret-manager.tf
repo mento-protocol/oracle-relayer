@@ -28,6 +28,7 @@ resource "google_secret_manager_secret_version" "discord_webhook_url" {
       "celo"          = var.discord_webhook_url_celo,
       "celo-sepolia"  = var.discord_webhook_url_celo_sepolia,
       "monad-testnet" = var.discord_webhook_url_celo_sepolia,
+      "monad"         = var.discord_webhook_url_celo,
     },
     terraform.workspace,
     var.discord_webhook_url_celo_sepolia # fallback

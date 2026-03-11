@@ -70,5 +70,10 @@
     "ausd_usd": "0x73dF2f773cdEeBd33282107c5705E73321Ee0D4d",
     "gbp_usd": "0xb8433a521881C17c7cf3F45684CdC9cc5918A736",
     "usdc_usd": "0x34b8E391e26faf1af1c751aa4F6b5E19FBF9190B"
+  },
+  "monad": {
+    "ausd_usd": "0x2604F6daFed5b6204868e15E89ca41C2D5f6D9c2",
+    "gbp_usd": "0xDb8fc8c6DaaC8F73E21e9cC145440AB899d60e55",
+    "usdc_usd": "0xB1683dB4D2D74E951C54314f1BCA1e8FBB299fE2"
   }
 }
