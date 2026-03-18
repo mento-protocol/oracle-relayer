@@ -3,15 +3,26 @@ set -e          # Fail on any error
 set -o pipefail # Ensure piped commands propagate exit codes properly
 set -u          # Treat unset variables as an error when substituting
 
-# Prints the log explorer URL for the Cloud Function and displays it in the terminal.
-# Usage: get-function-logs-url.sh [rate_feed]
-# Example with rate feed filter: get-function-logs-url.sh CELO/USD
+# Prints the log explorer URL for a Cloud Function and displays it in the terminal.
+# Usage: get-function-logs-url.sh <chain> [rate_feed]
+# Example: get-function-logs-url.sh celo-sepolia
+# Example with rate feed filter: get-function-logs-url.sh celo-sepolia CELO/USD
 get_function_logs_url() {
-	# Load the current project variables
+	if [[ $# -lt 1 ]]; then
+		echo "Usage: $0 <chain> [rate_feed]"
+		echo "Example: $0 celo-sepolia CELO/USD"
+		exit 1
+	fi
+
+	local chain=$1
+	shift
+
+	# Load the current project variables with chain context
 	script_dir=$(dirname "$0")
+	export CHAIN="${chain}"
 	source "${script_dir}/get-project-vars.sh"
 
-	# Optional rate feed filter (first argument)
+	# Optional rate feed filter (next argument)
 	rate_feed="${1-}"
 
 	# URL-encode the rate feed (replace / with %2F)

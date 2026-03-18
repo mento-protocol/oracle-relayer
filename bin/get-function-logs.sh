@@ -3,16 +3,27 @@ set -e          # Fail on any error
 set -o pipefail # Ensure piped commands propagate exit codes properly
 set -u          # Treat unset variables as an error when substituting
 
-# Fetches the latest logs for the Cloud Function and displays them in the terminal.
-# Usage: get-function-logs.sh [rate_feed]
-# Example with rate feed filter: get-function-logs.sh CELO/USD
+# Fetches the latest logs for a Cloud Function and displays them in the terminal.
+# Usage: get-function-logs.sh <chain> [rate_feed]
+# Example: get-function-logs.sh celo-sepolia
+# Example with rate feed filter: get-function-logs.sh celo-sepolia CELO/USD
 get_function_logs() {
-	# Load the current project variables and spinner utility
+	if [[ $# -lt 1 ]]; then
+		echo "Usage: $0 <chain> [rate_feed]"
+		echo "Example: $0 celo-sepolia CELO/USD"
+		exit 1
+	fi
+
+	local chain=$1
+	shift
+
+	# Load the current project variables with chain context
 	script_dir=$(dirname "$0")
+	export CHAIN="${chain}"
 	source "${script_dir}/get-project-vars.sh"
 	source "${script_dir}/spinner.sh"
 
-	# Optional rate feed filter (first argument)
+	# Optional rate feed filter (next argument)
 	rate_feed="${1-}"
 
 	# Base log query
@@ -27,9 +38,9 @@ get_function_logs() {
 	printf "\n"
 
 	if [[ -n ${rate_feed} ]]; then
-		title=$(printf "Fetching logs for rate feed: \033[1m%s\033[0m\n" "${rate_feed}")
+		title=$(printf "Fetching logs for rate feed: \033[1m%s\033[0m on \033[1m%s\033[0m\n" "${rate_feed}" "${chain}")
 	else
-		title="Fetching logs for all rate feeds"
+		title=$(printf "Fetching logs for \033[1m%s\033[0m" "${chain}")
 	fi
 
 	start_spinner "${title}"
@@ -44,7 +55,7 @@ get_function_logs() {
 	cleanup_spinner
 
 	if [[ -n ${rate_feed} ]]; then
-		printf "Logs filtered by rate feed: \033[1m%s\033[0m\n" "${rate_feed}"
+		printf "Logs filtered by rate feed: \033[1m%s\033[0m on \033[1m%s\033[0m\n" "${rate_feed}" "${chain}"
 	fi
 
 	printf "\n"

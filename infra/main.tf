@@ -1,21 +1,33 @@
 locals {
   relayer_addresses = jsondecode(file("${path.module}/relayer_addresses.json"))
 
-  # Map workspace names to chain IDs for use in project naming
-  # This keeps the project name under 30 chars while allowing devs to use friendly workspace names
-  workspace_to_chain_id = {
-    "celo"          = "42220"    # Celo Mainnet
-    "celo-sepolia"  = "11142220" # Celo Sepolia (Testnet)
-    "monad-testnet" = "10143"    # Monad Testnet
-    "monad"         = "143"      # Monad Mainnet
+  environment_chains = {
+    "testnet" = ["celo-sepolia", "monad-testnet"]
+    "mainnet" = ["celo", "monad"]
   }
 
-  # Validate workspace exists
-  chain_id = lookup(
-    local.workspace_to_chain_id,
-    terraform.workspace,
-    "INVALID_WORKSPACE" # Force error on unknown workspace
-  )
+  chains = local.environment_chains[terraform.workspace]
+
+  chain_configs = {
+    for chain in local.chains : chain => {
+      relayer_addresses = local.relayer_addresses[chain]
+      is_production     = terraform.workspace == "mainnet"
+    }
+  }
+
+  discord_webhook_url = terraform.workspace == "mainnet" ? var.discord_webhook_url_mainnet : var.discord_webhook_url_testnet
+
+  # Flattened scheduler jobs: "chain/rate_feed" => {chain, key, address}
+  all_scheduler_jobs = merge([
+    for chain, config in local.chain_configs : {
+      for feed, addr in config.relayer_addresses :
+      "${chain}/${feed}" => {
+        chain           = chain
+        rate_feed_key   = feed
+        relayer_address = addr
+      }
+    }
+  ]...)
 }
 
 provider "google" {
@@ -38,12 +50,11 @@ module "oracle_relayer" {
   create_project_sa       = true
   default_service_account = "disable"
   labels = {
-    "chain" = terraform.workspace
+    "environment" = terraform.workspace
   }
-  name   = "${var.project_name}-${terraform.workspace}"
-  org_id = var.org_id
-  # We use chain IDs (typically shorter) instead of chain names in the project ID to avoid the 30 character length limit
-  project_id        = "${var.project_name}-${local.chain_id}"
+  name              = "${var.project_name}-${terraform.workspace}"
+  org_id            = var.org_id
+  project_id        = "${var.project_name}-${terraform.workspace}"
   random_project_id = true
   source            = "git::https://github.com/terraform-google-modules/terraform-google-project-factory.git?ref=fdc4307ae52565d2385525690de851edb8e38d72" # commit hash of v18.1.0
 

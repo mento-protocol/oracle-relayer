@@ -1,12 +1,13 @@
-# Creates a metric that counts the number of log entries containing 'Relay succeeded' in the relay cloud function.
+# Creates a metric per chain that counts the number of log entries containing 'Relay succeeded' in the relay cloud function.
 resource "google_logging_metric" "successful_relay_count" {
+  for_each    = local.chain_configs
   project     = module.oracle_relayer.project_id
-  name        = "successful_relay_count"
-  description = "Number of log entries containing 'Relay succeeded' in the relay cloud function"
+  name        = "successful_relay_count_${each.key}"
+  description = "Number of log entries containing 'Relay succeeded' in the ${each.key} relay cloud function"
   filter      = <<EOF
     severity>=DEFAULT
     SEARCH("`Relay succeeded`")
-    resource.labels.function_name="${google_cloudfunctions2_function.relay.name}"
+    resource.labels.function_name="relay-${each.key}"
   EOF
 
   metric_descriptor {
@@ -31,7 +32,7 @@ resource "google_monitoring_notification_channel" "discord_channel" {
   type         = "webhook_tokenauth"
 
   labels = {
-    url = terraform.workspace == "celo" ? var.discord_webhook_url_celo : var.discord_webhook_url_celo_sepolia
+    url = local.discord_webhook_url
   }
 }
 
@@ -46,25 +47,26 @@ resource "google_monitoring_notification_channel" "victorops_channel" {
   }
 }
 
-# Creates an alert policy that triggers when no successful relay logs have been received in the last 30 minutes,
+# Creates an alert policy per chain that triggers when no successful relay logs have been received in the last 30 minutes,
 # and sends a notification to Splunk.
 resource "google_monitoring_alert_policy" "successful_relay_policy" {
+  for_each     = local.chain_configs
   project      = module.oracle_relayer.project_id
-  display_name = "no-successful-relay-logs"
+  display_name = "no-successful-relay-logs-${each.key}"
   combiner     = "OR" # Not used in practice because we only have one condition, but it's required by the API
   enabled      = true
 
   documentation {
-    content = "No successful relay events for $${metric.label.ratefeed} in the past 30 minutes"
+    content = "No successful relay events for $${metric.label.ratefeed} on ${each.key} in the past 30 minutes"
   }
 
   conditions {
-    display_name = "No successful relay logs in 30 minutes"
+    display_name = "No successful relay logs for ${each.key} in 30 minutes"
 
     condition_threshold {
       filter = <<EOF
         resource.type = "cloud_function" AND
-        metric.type   = "logging.googleapis.com/user/${google_logging_metric.successful_relay_count.name}"
+        metric.type   = "logging.googleapis.com/user/${google_logging_metric.successful_relay_count[each.key].name}"
       EOF
 
       duration        = "300s" # Re-test the condition every 5 minutes

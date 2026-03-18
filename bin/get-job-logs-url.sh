@@ -3,16 +3,31 @@ set -e          # Fail on any error
 set -o pipefail # Ensure piped commands propagate exit codes properly
 set -u          # Treat unset variables as an error when substituting
 
+# Prints the log explorer URL for a scheduler job.
+# Usage: get-job-logs-url.sh <chain> <rate-feed-description>
+# Example: get-job-logs-url.sh celo-sepolia PHP/USD
+
 # Load the project variables
 script_dir=$(dirname "$0")
-source "${script_dir}/get-project-vars.sh"
 
 usage() {
 	printf "\n"
-	echo "ℹ️  Usage: $0 <rate-feed-description>"
+	echo "ℹ️  Usage: $0 <chain> <rate-feed-description>"
+	echo "  Chain: 'celo-sepolia', 'monad-testnet', 'celo', or 'monad'"
 	echo "  Rate Feed Description: 'PHP/USD' or 'CELO/USD'"
 	exit 1
 }
+
+# Check arguments
+if [[ $# -ne 2 ]]; then
+	usage
+fi
+
+chain="$1"
+rate_feed_description="$2"
+
+export CHAIN="${chain}"
+source "${script_dir}/get-project-vars.sh"
 
 # Transform rate feed description to scheduler job name
 transform_to_scheduler_id() {
@@ -23,7 +38,7 @@ transform_to_scheduler_id() {
 	transformed_name=$(echo "${rate_feed_description}" | tr '[:upper:]' '[:lower:]' | tr '/' '_')
 
 	# Form the scheduler job name incl. the rate feed description
-	echo "request-relay-${transformed_name}"
+	echo "request-relay-${transformed_name}-${chain}"
 }
 
 # Validate rate feed description
@@ -46,12 +61,6 @@ check_if_job_exists() {
 }
 
 get_job_logs_url() {
-	# Check if rate feed description argument is provided
-	if [[ $# -ne 1 ]]; then
-		usage
-	fi
-
-	rate_feed_description="$1"
 	validate_rate_feed_description "${rate_feed_description}"
 	scheduler_job_id=$(transform_to_scheduler_id "${rate_feed_description}")
 	check_if_job_exists "${scheduler_job_id}"
@@ -59,7 +68,6 @@ get_job_logs_url() {
 	# Generate the URL for the logs
 	url="https://console.cloud.google.com/logs/query;query=resource.type%3D%22cloud_scheduler_job%22%20AND%20resource.labels.job_id%3D%22${scheduler_job_id}%22%20AND%20resource.labels.location%3D%22${region}%22?project=${project_id}"
 	printf '\n\033[1m%s\033[0m\n' "${url}"
-
 }
 
-get_job_logs_url "$@"
+get_job_logs_url
