@@ -43,8 +43,8 @@ tail_function_logs() {
 		--format "default" 2>&1 |
 		grep --line-buffered -v -E "(UserWarning|pkg_resources|Initializing tail session)" |
 		awk -v y="\033[33m" -v r="\033[31m" -v x="\033[0m" '
-		/^timestamp:/ { t=$2; gsub(/['\''T]/, " ", t); gsub(/\.[0-9]+Z/, "", t) }
-		/^severity:/ { s=($2=="500"||$2=="ERROR")?"ERROR":($2=="400"||$2=="WARNING")?"WARNING":"INFO" }
+		/^timestamp:/ { t=$2; gsub(/'\''/, "", t); gsub(/T/, " ", t); gsub(/\.[0-9]+Z'\''?/, "", t) }
+		/^severity:/ { s=$2; gsub(/'\''/, "", s); if (s+0>=500||s=="ERROR") s="ERROR"; else if (s+0>=400||s=="WARNING") s="WARNING"; else s="INFO" }
 		/^  rateFeed:/ { f=$2 }
 		/^  message:/ { sub(/^  message: '\''?/, ""); sub(/'\''$/, ""); m=$0 }
 		/^text_payload:/ { sub(/^text_payload: '\''?/, ""); sub(/'\''$/, ""); m=$0 }
