@@ -36,6 +36,7 @@ provider "google" {
 
 module "oracle_relayer" {
   activate_apis = [
+    "artifactregistry.googleapis.com",
     "cloudfunctions.googleapis.com",
     "cloudbuild.googleapis.com",
     "cloudresourcemanager.googleapis.com",

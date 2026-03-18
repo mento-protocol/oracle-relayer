@@ -167,6 +167,15 @@ resource "google_project_iam_member" "secret_accessor" {
   member  = "serviceAccount:${module.oracle_relayer.service_account_email}"
 }
 
+# Allow the Cloud Functions service agent to pull container images from Artifact Registry
+resource "google_project_iam_member" "functions_artifact_registry" {
+  project = module.oracle_relayer.project_id
+  role    = "roles/artifactregistry.reader"
+  member  = "serviceAccount:service-${module.oracle_relayer.project_number}@gcf-admin-robot.iam.gserviceaccount.com"
+
+  depends_on = [module.oracle_relayer]
+}
+
 output "function_uris" {
   value = {
     for chain, fn in google_cloudfunctions2_function.relay : chain => fn.service_config[0].uri
