@@ -18,3 +18,5 @@ pnpm-lock.yaml
 
 # Local Stuff
 .project_vars_cache
+
+.claude/
