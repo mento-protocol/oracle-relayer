@@ -86,11 +86,6 @@ variable "function_entry_point" {
   default = "relay"
 }
 
-variable "pubsub_topic" {
-  type    = string
-  default = "relay"
-}
-
 variable "scheduler_job_name" {
   type    = string
   default = "request-relay"

@@ -174,8 +174,8 @@ set_chain_vars() {
 		exit 1
 	fi
 
-	function_name="relay-${chain}"
-	topic_name="relay-${env}-${chain}"
+	export function_name="relay-${chain}"
+	export topic_name="relay-${env}-${chain}"
 }
 
 # Main script logic

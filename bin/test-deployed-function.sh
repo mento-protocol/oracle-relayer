@@ -53,7 +53,7 @@ test_deployed_function() {
 	echo "✅ Pubsub event emitted!"
 	printf "\n"
 
-	echo 'Now check the logs via `npm run logs` or in the Cloud Console.'
+	echo "Now check the logs via 'npm run logs' or in the Cloud Console."
 }
 
 test_deployed_function "$@"
