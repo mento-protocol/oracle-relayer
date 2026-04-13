@@ -10,6 +10,7 @@ import {
   ContractFunctionRevertedError,
   createPublicClient,
   createWalletClient,
+  encodeFunctionData,
   getContract,
   http,
 } from "viem";
@@ -67,7 +68,13 @@ export default async function relay(
   });
 
   try {
-    return await submitTx(contract, publicClient, isRetryAttempt, logger);
+    return await submitTx(
+      contract,
+      publicClient,
+      wallet,
+      isRetryAttempt,
+      logger,
+    );
   } catch (err) {
     if (!(err instanceof BaseError)) {
       // Theoretically should never happen, as all errors in Viem should extend BaseError
@@ -159,6 +166,7 @@ async function isContract(address: string): Promise<boolean> {
 async function submitTx(
   relayerContract: RelayerContract,
   client: PublicClient,
+  wallet: WalletClient,
   isRetryAttempt: boolean,
   logger: Logger,
 ): Promise<boolean> {
@@ -172,7 +180,17 @@ async function submitTx(
     gasParams.maxPriorityFeePerGas *= 2n;
   }
 
-  const hash = await relayerContract.write.relay([], gasParams);
+  // eth_estimateGas returns the exact gas needed at the current state, but by the time the tx is
+  // mined, the state may have changed (e.g. different position in SortedOracles linked list),
+  // causing slightly higher gas usage. Adding a buffer prevents out-of-gas failures.
+  const gasEstimate = await client.estimateGas({
+    account: wallet.account!,
+    to: relayerContract.address,
+    data: encodeFunctionData({ abi: relayerAbi, functionName: "relay" }),
+  });
+  const gas = (gasEstimate * 105n) / 100n;
+
+  const hash = await relayerContract.write.relay([], { ...gasParams, gas });
   const receipt = await publicClient.waitForTransactionReceipt({
     hash,
   });
