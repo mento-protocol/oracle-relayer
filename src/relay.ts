@@ -184,6 +184,7 @@ async function submitTx(
   // mined, the state may have changed (e.g. different position in SortedOracles linked list),
   // causing slightly higher gas usage. Adding a buffer prevents out-of-gas failures.
   const gasEstimate = await client.estimateGas({
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     account: wallet.account!,
     to: relayerContract.address,
     data: encodeFunctionData({ abi: relayerAbi, functionName: "relay" }),
