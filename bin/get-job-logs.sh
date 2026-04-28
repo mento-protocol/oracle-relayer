@@ -3,17 +3,32 @@ set -e          # Fail on any error
 set -o pipefail # Ensure piped commands propagate exit codes properly
 set -u          # Treat unset variables as an error when substituting
 
+# Fetches scheduler job logs for a specific chain and rate feed.
+# Usage: get-job-logs.sh <chain> <rate-feed-description>
+# Example: get-job-logs.sh celo-sepolia PHP/USD
+
 # Load the project variables and spinner utility
 script_dir=$(dirname "$0")
-source "${script_dir}/get-project-vars.sh"
-source "${script_dir}/spinner.sh"
 
 usage() {
 	printf "\n"
-	echo "ℹ️  Usage: $0 <rate-feed-description>"
+	echo "ℹ️  Usage: $0 <chain> <rate-feed-description>"
+	echo "  Chain: 'celo-sepolia', 'monad-testnet', 'celo', or 'monad'"
 	echo "  Rate Feed Description: 'PHP/USD' or 'CELO/USD'"
 	exit 1
 }
+
+# Check arguments
+if [[ $# -ne 2 ]]; then
+	usage
+fi
+
+chain="$1"
+rate_feed_description="$2"
+
+export CHAIN="${chain}"
+source "${script_dir}/get-project-vars.sh"
+source "${script_dir}/spinner.sh"
 
 # Transform rate feed description to scheduler job name
 transform_to_scheduler_id() {
@@ -24,7 +39,7 @@ transform_to_scheduler_id() {
 	transformed_name=$(echo "${rate_feed_description}" | tr '[:upper:]' '[:lower:]' | tr '/' '_')
 
 	# Form the scheduler job name incl. the rate feed description
-	echo "${scheduler_job_name}-${transformed_name}-${workspace}"
+	echo "${scheduler_job_name}-${transformed_name}-${chain}"
 }
 
 # Validate rate feed description
@@ -46,12 +61,6 @@ check_if_job_exists() {
 	fi
 }
 
-# Check if workspace argument is provided
-if [[ $# -ne 1 ]]; then
-	usage
-fi
-
-rate_feed_description="$1"
 validate_rate_feed_description "${rate_feed_description}"
 scheduler_job_id=$(transform_to_scheduler_id "${rate_feed_description}")
 check_if_job_exists "${scheduler_job_id}"

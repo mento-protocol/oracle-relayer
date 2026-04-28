@@ -1,8 +1,7 @@
 variable "project_name" {
   type        = string
   description = "Google Cloud Project Name of the Oracle Relayer Project"
-  # Can be at most 17 characters long (30 chars - 8 for chain ID - 1 for hyphen - 4 for random suffix)
-  default = "oracle-relayer"
+  default     = "oracle-relayer"
 }
 
 variable "region" {
@@ -45,18 +44,22 @@ variable "discord_webhook_url_secret_id" {
   default = "discord-webhook-url"
 }
 
-# You can look this up either on the Discord Channel settings, or fetch it from Secret Manager via:
-#  `gcloud secrets versions access latest --secret discord-webhook-url-celo-sepolia`
-variable "discord_webhook_url_celo_sepolia" {
+# Discord webhook URL for testnet alerts
+variable "discord_webhook_url_testnet" {
   type      = string
   sensitive = true
 }
 
-# You can look this up either on the Discord Channel settings, or fetch it from Secret Manager via:
-#  `gcloud secrets versions access latest --secret discord-webhook-url-celo`
-variable "discord_webhook_url_celo" {
+# Discord webhook URL for mainnet alerts
+variable "discord_webhook_url_mainnet" {
   type      = string
   sensitive = true
+}
+
+# Chain to use for local development .env file generation
+variable "local_dev_chain" {
+  type    = string
+  default = "celo-sepolia"
 }
 
 
@@ -78,19 +81,9 @@ variable "terraform_seed_project_id" {
   default     = "mento-terraform-seed-ffac"
 }
 
-variable "function_name" {
-  type    = string
-  default = "relay-function"
-}
-
 variable "function_entry_point" {
   type    = string
   default = "relay"
-}
-
-variable "pubsub_topic" {
-  type    = string
-  default = "relay-requested"
 }
 
 variable "scheduler_job_name" {

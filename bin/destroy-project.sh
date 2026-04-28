@@ -4,12 +4,12 @@ set -o pipefail # Ensure piped commands propagate exit codes properly
 set -u          # Treat unset variables as an error when substituting
 
 # Destroys a Terraform project in a specified workspace.
-# Requires an environment arg (e.g., celo-sepolia, celo).
+# Requires an environment arg (e.g., testnet, mainnet).
 destroy_project() {
 	# Helper function to display usage
 	usage() {
 		echo "Usage: $0 <workspace>"
-		echo "  workspace: The Terraform workspace to destroy (e.g., 'celo-sepolia' or 'celo')"
+		echo "  workspace: The Terraform workspace to destroy (e.g., 'testnet' or 'mainnet')"
 		exit 1
 	}
 
@@ -47,8 +47,6 @@ destroy_project() {
 	echo "Running terraform destroy..."
 	terraform destroy
 	printf "\n\n"
-	# If we add separate variable files for each workspace, we would change this to:
-	# terraform destroy -var-file="${workspace}.tfvars"
 
 	# Step 4: Clean up local Terraform cache
 	echo "Cleaning up local Terraform cache..."

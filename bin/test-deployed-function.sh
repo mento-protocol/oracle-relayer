@@ -4,15 +4,17 @@ set -o pipefail # Ensure piped commands propagate exit codes properly
 set -u          # Treat unset variables as an error when substituting
 
 # Manually triggers a deployed Cloud Function by emitting a Pubsub event.
-# Requires an environment arg (e.g., celo-sepolia, celo).
+# Requires a chain and rate feed ID.
+# Usage: test-deployed-function.sh <chain> <rate_feed_description>
+# Example: test-deployed-function.sh celo-sepolia PHP/USD
 test_deployed_function() {
-	# Check if environment and rate feed ID parameters are provided
+	# Check if chain and rate feed ID parameters are provided
 	if [[ $# -ne 2 ]]; then
-		echo "Usage: $0 <env> <rate_feed_description>"
+		echo "Usage: $0 <chain> <rate_feed_description>"
 		echo "Example: $0 celo-sepolia PHP/USD"
 		exit 1
 	fi
-	env=$1
+	local chain=$1
 	rate_feed_id=$2
 
 	# Validate rate feed ID format
@@ -23,10 +25,9 @@ test_deployed_function() {
 
 	json_key=$(echo "${rate_feed_id}" | tr '[:upper:]' '[:lower:]' | tr '/' '_')
 
-	terraform -chdir=infra workspace select "${env}"
-
-	# Load the project variables
+	# Load the project variables with chain context
 	script_dir=$(dirname "$0")
+	export CHAIN="${chain}"
 	source "${script_dir}/get-project-vars.sh"
 	printf "\n"
 
@@ -37,10 +38,10 @@ test_deployed_function() {
 		exit 1
 	fi
 
-	address=$(jq -r ".\"${env}\".\"${json_key}\"" "${json_file}")
+	address=$(jq -r ".\"${chain}\".\"${json_key}\"" "${json_file}")
 
 	if [[ ${address} == "null" ]]; then
-		echo "❌ Error: Address not found for rate feed ID '${rate_feed_id}' in environment '${env}'."
+		echo "❌ Error: Address not found for rate feed ID '${rate_feed_id}' on chain '${chain}'."
 		exit 1
 	fi
 
@@ -52,8 +53,7 @@ test_deployed_function() {
 	echo "✅ Pubsub event emitted!"
 	printf "\n"
 
-	logs_url=$(npm run logs:url 2>/dev/null | tail -n1 || echo "npm run logs:url")
-	echo "Now check the logs via \`npm run logs\` or in the Cloud Console via ${logs_url}"
+	echo "Now check the logs via 'npm run logs' or in the Cloud Console."
 }
 
 test_deployed_function "$@"

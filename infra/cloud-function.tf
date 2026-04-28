@@ -1,8 +1,9 @@
 resource "google_cloudfunctions2_function" "relay" {
+  for_each    = local.chain_configs
   project     = module.oracle_relayer.project_id
   location    = var.region
-  name        = "${var.function_name}-${terraform.workspace}"
-  description = "Listens to 'RelayRequested' events from Pub/Sub and executes the relay request against the `relayer_address` param of the event."
+  name        = "relay-${each.key}"
+  description = "Listens to relay events from Pub/Sub and executes the relay request against the `relayer_address` param of the event."
 
   build_config {
     runtime         = "nodejs22"
@@ -29,24 +30,25 @@ resource "google_cloudfunctions2_function" "relay" {
       RELAYER_MNEMONIC_SECRET_ID    = google_secret_manager_secret.relayer_mnemonic.secret_id
       # Logs execution ID for easier debugging => https://cloud.google.com/functions/docs/monitoring/logging#viewing_runtime_logs
       LOG_EXECUTION_ID = "true"
-      NODE_ENV         = terraform.workspace == "celo" ? "production" : "development"
-      CHAIN            = terraform.workspace
+      NODE_ENV         = each.value.is_production ? "production" : "development"
+      CHAIN            = each.key
     }
   }
 
   event_trigger {
     trigger_region        = var.region
     event_type            = "google.cloud.pubsub.topic.v1.messagePublished"
-    pubsub_topic          = google_pubsub_topic.relay_requested.id
+    pubsub_topic          = google_pubsub_topic.relay[each.key].id
     retry_policy          = "RETRY_POLICY_DO_NOT_RETRY"
     service_account_email = module.oracle_relayer.service_account_email
   }
 }
 
 resource "google_cloud_run_service_iam_member" "invoker" {
+  for_each = local.chain_configs
   project  = module.oracle_relayer.project_id
-  location = google_cloudfunctions2_function.relay.location
-  service  = google_cloudfunctions2_function.relay.name
+  location = google_cloudfunctions2_function.relay[each.key].location
+  service  = google_cloudfunctions2_function.relay[each.key].name
   role     = "roles/run.invoker"
   member   = "serviceAccount:${module.oracle_relayer.service_account_email}"
 }
@@ -87,6 +89,7 @@ data "archive_file" "function_source" {
     ".trunk",
     ".vscode",
     "DEPLOY_FROM_SCRATCH.md",
+    "MIGRATION_PLAN.md",
     "README.md",
     "bin",
     "commitlint.config.mjs",
@@ -102,7 +105,7 @@ data "archive_file" "function_source" {
 # Storage Bucket for the Cloud Function source code
 resource "google_storage_bucket" "relay_function" {
   project                     = module.oracle_relayer.project_id
-  name                        = "${module.oracle_relayer.project_id}-${terraform.workspace}-relay-function-source" # Every bucket name must be globally unique
+  name                        = "${module.oracle_relayer.project_id}-relay-function-source" # Every bucket name must be globally unique
   location                    = var.region
   uniform_bucket_level_access = true
   public_access_prevention    = "enforced"
@@ -129,7 +132,7 @@ resource "google_storage_bucket_object" "source_code" {
 resource "google_storage_bucket" "logging" {
   #checkov:skip=CKV_GCP_62:The logging bucket can't log to itself (circular dependency)
   project                     = module.oracle_relayer.project_id
-  name                        = "${module.oracle_relayer.project_id}-${terraform.workspace}-logging" # Every bucket name must be globally unique
+  name                        = "${module.oracle_relayer.project_id}-logging" # Every bucket name must be globally unique
   location                    = var.region
   uniform_bucket_level_access = true
   public_access_prevention    = "enforced"
@@ -164,6 +167,17 @@ resource "google_project_iam_member" "secret_accessor" {
   member  = "serviceAccount:${module.oracle_relayer.service_account_email}"
 }
 
-output "function_uri" {
-  value = google_cloudfunctions2_function.relay.service_config[0].uri
+# Allow the Cloud Functions service agent to pull container images from Artifact Registry
+resource "google_project_iam_member" "functions_artifact_registry" {
+  project = module.oracle_relayer.project_id
+  role    = "roles/artifactregistry.reader"
+  member  = "serviceAccount:service-${module.oracle_relayer.project_number}@gcf-admin-robot.iam.gserviceaccount.com"
+
+  depends_on = [module.oracle_relayer]
+}
+
+output "function_uris" {
+  value = {
+    for chain, fn in google_cloudfunctions2_function.relay : chain => fn.service_config[0].uri
+  }
 }

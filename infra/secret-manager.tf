@@ -23,5 +23,5 @@ resource "google_secret_manager_secret" "discord_webhook_url" {
 
 resource "google_secret_manager_secret_version" "discord_webhook_url" {
   secret      = google_secret_manager_secret.discord_webhook_url.id
-  secret_data = terraform.workspace == "celo" ? var.discord_webhook_url_celo : var.discord_webhook_url_celo_sepolia
+  secret_data = local.discord_webhook_url
 }

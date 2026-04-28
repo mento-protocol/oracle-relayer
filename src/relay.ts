@@ -10,10 +10,11 @@ import {
   ContractFunctionRevertedError,
   createPublicClient,
   createWalletClient,
+  encodeFunctionData,
   getContract,
   http,
 } from "viem";
-import { celo, celoSepolia } from "viem/chains";
+import { celo, celoSepolia, monad, monadTestnet } from "viem/chains";
 
 import type { Logger } from "winston";
 import config from "./config";
@@ -28,6 +29,8 @@ import { deriveRelayerAccount } from "./utils";
 const chainMap: Record<typeof config.CHAIN, Chain> = {
   celo: celo,
   "celo-sepolia": celoSepolia,
+  "monad-testnet": monadTestnet,
+  monad: monad,
 };
 
 // Re-use clients across function invocations to save on initialization time and memory
@@ -65,7 +68,13 @@ export default async function relay(
   });
 
   try {
-    return await submitTx(contract, publicClient, isRetryAttempt, logger);
+    return await submitTx(
+      contract,
+      publicClient,
+      wallet,
+      isRetryAttempt,
+      logger,
+    );
   } catch (err) {
     if (!(err instanceof BaseError)) {
       // Theoretically should never happen, as all errors in Viem should extend BaseError
@@ -157,6 +166,7 @@ async function isContract(address: string): Promise<boolean> {
 async function submitTx(
   relayerContract: RelayerContract,
   client: PublicClient,
+  wallet: WalletClient,
   isRetryAttempt: boolean,
   logger: Logger,
 ): Promise<boolean> {
@@ -170,7 +180,18 @@ async function submitTx(
     gasParams.maxPriorityFeePerGas *= 2n;
   }
 
-  const hash = await relayerContract.write.relay([], gasParams);
+  // eth_estimateGas returns the exact gas needed at the current state, but by the time the tx is
+  // mined, the state may have changed (e.g. different position in SortedOracles linked list),
+  // causing slightly higher gas usage. Adding a buffer prevents out-of-gas failures.
+  const gasEstimate = await client.estimateGas({
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    account: wallet.account!,
+    to: relayerContract.address,
+    data: encodeFunctionData({ abi: relayerAbi, functionName: "relay" }),
+  });
+  const gas = (gasEstimate * 105n) / 100n;
+
+  const hash = await relayerContract.write.relay([], { ...gasParams, gas });
   const receipt = await publicClient.waitForTransactionReceipt({
     hash,
   });

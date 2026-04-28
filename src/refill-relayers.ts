@@ -8,17 +8,19 @@ import {
   parseEther,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { celo, celoSepolia } from "viem/chains";
+import { celo, celoSepolia, monad, monadTestnet } from "viem/chains";
 import { config } from "./config";
 import getSecret from "./get-secret";
 import { deriveRelayerAccount } from "./utils";
 
-const MIN_BALANCE_THRESHOLD = 5;
+const MIN_BALANCE_THRESHOLD = 50;
 const TRANSFER_AMOUNT = 100;
 
 const chains: Record<string, Chain> = {
   celo,
   "celo-sepolia": celoSepolia,
+  monad,
+  "monad-testnet": monadTestnet,
 } as const;
 
 /**
@@ -36,11 +38,14 @@ function convertRateFeedFormat(rateFeedKey: string): string {
 async function main() {
   const chainArg = process.argv[2];
   if (!chainArg || !(chainArg in chains)) {
-    console.log("Usage: pnpm refill:celo or pnpm refill:celo-sepolia");
+    console.log(
+      "Usage: pnpm refill:celo | pnpm refill:celo-sepolia | pnpm refill:monad | pnpm refill:monad-testnet",
+    );
     process.exit(1);
   }
 
   const chain = chains[chainArg];
+  const symbol = chain.nativeCurrency.symbol;
   console.log(`Refilling relayer accounts on ${chainArg}...`);
 
   const relayerAddressesPath = path.resolve(
@@ -80,15 +85,15 @@ async function main() {
     const balance = await publicClient.getBalance({
       address: relayerAccount.address,
     });
-    const balanceInCelo = Number(balance) / 1e18;
+    const balanceInNative = Number(balance) / 1e18;
 
     console.log(
-      `${rateFeedKey}: ${relayerAccount.address} - Balance: ${balanceInCelo.toFixed(4)} CELO`,
+      `${rateFeedKey}: ${relayerAccount.address} - Balance: ${balanceInNative.toFixed(4)} ${symbol}`,
     );
 
-    if (balanceInCelo < MIN_BALANCE_THRESHOLD) {
+    if (balanceInNative < MIN_BALANCE_THRESHOLD) {
       console.log(
-        `  Low balance detected. Transferring ${TRANSFER_AMOUNT.toString()} CELO...`,
+        `  Low balance detected. Transferring ${TRANSFER_AMOUNT.toString()} ${symbol}...`,
       );
 
       try {
@@ -98,6 +103,7 @@ async function main() {
           chain,
         });
         await publicClient.waitForTransactionReceipt({ hash });
+        // let hash = "0x1234567890";
 
         console.log(`  Transaction sent: ${hash}`);
         transfersMade.push({
@@ -107,7 +113,10 @@ async function main() {
           hash,
         });
       } catch (error) {
-        console.error(`  Error transferring CELO to ${rateFeedKey}:`, error);
+        console.error(
+          `  Error transferring ${symbol} to ${rateFeedKey}:`,
+          error,
+        );
       }
     } else {
       console.log(`  Balance is sufficient.`);
@@ -118,7 +127,7 @@ async function main() {
     console.log("\nTransfers made:");
     for (const transfer of transfersMade) {
       console.log(
-        `- ${transfer.rateFeed}: ${String(transfer.amount)} CELO to ${transfer.address} (tx: ${transfer.hash})`,
+        `- ${transfer.rateFeed}: ${String(transfer.amount)} ${symbol} to ${transfer.address} (tx: ${transfer.hash})`,
       );
     }
   } else {

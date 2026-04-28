@@ -1,7 +1,8 @@
 # Create the Pub/Sub schema
-resource "google_pubsub_schema" "relay_requested_schema" {
+resource "google_pubsub_schema" "relay_schema" {
+  for_each   = local.chain_configs
   project    = module.oracle_relayer.project_id
-  name       = "relay-requested-schema-${terraform.workspace}"
+  name       = "relay-schema-${terraform.workspace}-${each.key}"
   type       = "AVRO"
   definition = <<-EOF
 {
@@ -24,10 +25,11 @@ EOF
 }
 
 # Create the Pub/Sub topic
-resource "google_pubsub_topic" "relay_requested" {
+resource "google_pubsub_topic" "relay" {
   # checkov:skip=CKV_GCP_83:The Pub/Sub messages do not contain sensitive data
-  project = module.oracle_relayer.project_id
-  name    = "${var.pubsub_topic}-${terraform.workspace}"
+  for_each = local.chain_configs
+  project  = module.oracle_relayer.project_id
+  name     = "relay-${terraform.workspace}-${each.key}"
 
   labels = {
     rate_feed_name  = "required"
@@ -37,7 +39,7 @@ resource "google_pubsub_topic" "relay_requested" {
   message_retention_duration = "604800s" # 7 days (max. allowed by GCP)
 
   schema_settings {
-    schema   = google_pubsub_schema.relay_requested_schema.id
+    schema   = google_pubsub_schema.relay_schema[each.key].id
     encoding = "JSON"
   }
 
