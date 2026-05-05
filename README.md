@@ -13,10 +13,10 @@
 
 The oracle relayer infrastructure is organized into **2 GCP projects** — one per environment:
 
-| Environment | GCP Project              | Cloud Functions                             | Pub/Sub Topics                                              |
-| ----------- | ------------------------ | ------------------------------------------- | ----------------------------------------------------------- |
-| testnet     | `oracle-relayer-testnet` | `relay-celo-sepolia`, `relay-monad-testnet` | `relay-testnet-celo-sepolia`, `relay-testnet-monad-testnet` |
-| mainnet     | `oracle-relayer-mainnet` | `relay-celo`, `relay-monad`                 | `relay-mainnet-celo`, `relay-mainnet-monad`                 |
+| Environment | GCP Project              | Cloud Functions                                                      | Pub/Sub Topics                                                                               |
+| ----------- | ------------------------ | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| testnet     | `oracle-relayer-testnet` | `relay-celo-sepolia`, `relay-monad-testnet`, `relay-polygon-testnet` | `relay-testnet-celo-sepolia`, `relay-testnet-monad-testnet`, `relay-testnet-polygon-testnet` |
+| mainnet     | `oracle-relayer-mainnet` | `relay-celo`, `relay-monad`                                          | `relay-mainnet-celo`, `relay-mainnet-monad`                                                  |
 
 Each environment hosts multiple cloud functions (one per chain), sharing the same source code but differentiated by the `CHAIN` environment variable. Terraform workspaces map to environments (`testnet` / `mainnet`), and `for_each` iterates over chains within each workspace.
 
@@ -243,6 +243,7 @@ gcloud beta logging tail 'resource.labels.service_name="relay-celo-sepolia" AND 
   - `deploy:mainnet`: Deploys all mainnet chains (via `terraform apply`)
   - `deploy:function:celo-sepolia`: Deploys only the cloud function for celo-sepolia (via `gcloud functions deploy`)
   - `deploy:function:monad-testnet`: Deploys only the cloud function for monad-testnet (via `gcloud functions deploy`)
+  - `deploy:function:polygon-testnet`: Deploys only the cloud function for polygon-testnet (via `gcloud functions deploy`)
   - `deploy:function:celo`: Deploys only the cloud function for celo (via `gcloud functions deploy`)
   - `deploy:function:monad`: Deploys only the cloud function for monad (via `gcloud functions deploy`)
   - `plan:testnet`: Shorthand for running `terraform plan` for the testnet environment
@@ -297,7 +298,7 @@ You have two options to deploy the Cloud Function code, `terraform` or `gcloud` 
      - Less familiar way of deploying cloud functions (if you're used to `gcloud functions deploy`)
      - Less log output
      - Slightly slower because `terraform apply` will always fetch the current state from the cloud storage bucket before deploying
-2. Via `gcloud` by running `npm run deploy:function:[celo-sepolia|monad-testnet|celo|monad]`
+2. Via `gcloud` by running `npm run deploy:function:[celo-sepolia|monad-testnet|polygon-testnet|celo|monad]`
    - How? The npm task will:
      - Look up the service account used by the cloud function
      - Call `gcloud functions deploy` with the correct parameters
@@ -315,7 +316,7 @@ You have two options to deploy the Cloud Function code, `terraform` or `gcloud` 
 
 1. Deploy the new relayer contracts via the [relayer factory](https://github.com/mento-protocol/mento-core/blob/develop/contracts/oracles/ChainlinkRelayerFactory.sol). Exemplary deployment scripts can be found in the [MU07 Deployment Scripts](https://github.com/mento-protocol/mento-deployment/blob/main/script/upgrades/MU07/deploy/MU07-Deploy-ChainlinkRelayers.sol)
 1. Ensure the new relayers have been whitelisted in SortedOracles on the relevant chain (otherwise relay() transactions will fail)
-1. Add the addresses of the deployed relayers to [relayer_addresses.json](./infra/relayer_addresses.json) under the appropriate chain key (e.g., `celo-sepolia`, `monad-testnet`, `celo`, `monad`)
+1. Add the addresses of the deployed relayers to [relayer_addresses.json](./infra/relayer_addresses.json) under the appropriate chain key (e.g., `celo-sepolia`, `monad-testnet`, `polygon-testnet`, `celo`, `monad`)
 1. Run `npm run deploy:testnet` and/or `npm run deploy:mainnet` to create GCP cloud scheduler jobs for the new relayers
 1. [Add the new relayers to aegis for monitoring](#aegis-export-for-monitoring-relayers)
 

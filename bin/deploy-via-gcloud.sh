@@ -9,7 +9,7 @@ set -u          # Treat unset variables as an error when substituting
 deploy_via_gcloud() {
 	if [[ $# -ne 1 ]]; then
 		echo "Usage: $0 <chain>"
-		echo "  chain: The chain to deploy (e.g., 'celo-sepolia', 'monad-testnet', 'celo', 'monad')"
+		echo "  chain: The chain to deploy (e.g., 'celo-sepolia', 'monad-testnet', 'polygon-testnet', 'celo', 'monad')"
 		exit 1
 	fi
 

@@ -13,7 +13,7 @@ script_dir=$(dirname "$0")
 usage() {
 	printf "\n"
 	echo "ℹ️  Usage: $0 <chain> <rate-feed-description>"
-	echo "  Chain: 'celo-sepolia', 'monad-testnet', 'celo', or 'monad'"
+	echo "  Chain: 'celo-sepolia', 'monad-testnet', 'polygon-testnet', 'celo', or 'monad'"
 	echo "  Rate Feed Description: 'PHP/USD' or 'CELO/USD'"
 	exit 1
 }
