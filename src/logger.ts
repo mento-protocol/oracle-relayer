@@ -17,6 +17,14 @@ export default function getLogger(
     return info;
   });
 
+  // Prefix every message with [chain][rateFeed] so logs are easy to scan and
+  // grep visually — the same values are also attached as structured labels
+  // below for filtering in Logs Explorer
+  const addContextPrefix = winston.format((info) => {
+    info.message = `[${config.CHAIN}][${rateFeed}] ${String(info.message)}`;
+    return info;
+  });
+
   const transports: winston.transport[] = [
     // Cloud Logging transport with proper resource descriptor for Cloud Run
     new LoggingWinston({
@@ -47,6 +55,7 @@ export default function getLogger(
           new winston.transports.Console({
             level: "info",
             format: format.combine(
+              addContextPrefix(),
               format.timestamp(),
               format.printf((log) => {
                 return `[${log.level}] ${String(log.timestamp)}: ${log.message as string}`;
@@ -59,7 +68,11 @@ export default function getLogger(
 
   return winston.createLogger({
     level: "info",
-    format: winston.format.combine(addTraceId(), winston.format.json()),
+    format: winston.format.combine(
+      addTraceId(),
+      addContextPrefix(),
+      winston.format.json(),
+    ),
     transports,
   });
 }
