@@ -1,7 +1,9 @@
 import { cloudEvent, CloudEvent } from "@google-cloud/functions-framework";
+import config from "./config";
 import getLogger from "./logger";
 import relay from "./relay";
 import type { PubsubData, RelayRequested } from "./types";
+import { updateMockAggregators } from "./update-mock-aggregators";
 import { getTraceId } from "./utils";
 
 cloudEvent("relay", async (event: CloudEvent<PubsubData>) => {
@@ -42,6 +44,18 @@ cloudEvent("relay", async (event: CloudEvent<PubsubData>) => {
 
   if (!ok) {
     return { status: "error", message: "Relay failed" };
+  }
+
+  return { status: "success" };
+});
+
+cloudEvent("updateMockAggregators", async (event: CloudEvent<PubsubData>) => {
+  const traceId = getTraceId(event);
+  const logger = getLogger("mock-aggregator-updater", traceId);
+  const ok = await updateMockAggregators(config.CHAIN, logger);
+
+  if (!ok) {
+    return { status: "error", message: "Mock aggregator update failed" };
   }
 
   return { status: "success" };

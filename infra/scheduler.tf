@@ -24,3 +24,19 @@ resource "google_cloud_scheduler_job" "relay_jobs" {
     }))
   }
 }
+
+resource "google_cloud_scheduler_job" "mock_aggregator_update_jobs" {
+  for_each = local.mock_aggregator_updater_chain_configs
+
+  project     = module.oracle_relayer.project_id
+  region      = var.region
+  name        = "update-mock-aggregators-${each.key}"
+  description = "Updates mock Chainlink aggregators on ${each.key} once per day at 00:00 UTC"
+  schedule    = "0 0 * * *"
+  time_zone   = "Etc/UTC"
+
+  pubsub_target {
+    topic_name = google_pubsub_topic.mock_aggregator_updates[each.key].id
+    data       = base64encode("{}")
+  }
+}

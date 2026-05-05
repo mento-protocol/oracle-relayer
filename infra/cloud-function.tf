@@ -53,13 +53,71 @@ resource "google_cloud_run_service_iam_member" "invoker" {
   member   = "serviceAccount:${module.oracle_relayer.service_account_email}"
 }
 
+resource "google_cloudfunctions2_function" "mock_aggregator_updater" {
+  for_each    = local.mock_aggregator_updater_chain_configs
+  project     = module.oracle_relayer.project_id
+  location    = var.region
+  name        = "update-mock-aggregators-${each.key}"
+  description = "Updates testnet mock Chainlink aggregators with latest mainnet Chainlink prices."
+
+  build_config {
+    runtime         = "nodejs22"
+    entry_point     = "updateMockAggregators"
+    service_account = module.oracle_relayer.service_account_name
+
+    source {
+      storage_source {
+        bucket = google_storage_bucket.relay_function.name
+        object = google_storage_bucket_object.source_code.name
+      }
+    }
+  }
+
+  service_config {
+    available_memory      = "256M"
+    ingress_settings      = "ALLOW_INTERNAL_ONLY"
+    service_account_email = module.oracle_relayer.service_account_email
+    timeout_seconds       = 180
+
+    environment_variables = {
+      GCP_PROJECT_ID                                 = module.oracle_relayer.project_id
+      DISCORD_WEBHOOK_URL_SECRET_ID                  = google_secret_manager_secret.discord_webhook_url.secret_id
+      RELAYER_MNEMONIC_SECRET_ID                     = google_secret_manager_secret.relayer_mnemonic.secret_id
+      MOCK_AGGREGATOR_REPORTER_PRIVATE_KEY_SECRET_ID = google_secret_manager_secret.mock_aggregator_reporter_private_key[0].secret_id
+      MOCK_AGGREGATOR_BATCH_REPORTER_ADDRESS         = var.mock_aggregator_batch_reporter_addresses[each.key]
+      MOCK_AGGREGATOR_MAPPINGS_JSON                  = jsonencode(local.mock_aggregator_mappings)
+      LOG_EXECUTION_ID                               = "true"
+      NODE_ENV                                       = "development"
+      CHAIN                                          = each.key
+    }
+  }
+
+  event_trigger {
+    trigger_region        = var.region
+    event_type            = "google.cloud.pubsub.topic.v1.messagePublished"
+    pubsub_topic          = google_pubsub_topic.mock_aggregator_updates[each.key].id
+    retry_policy          = "RETRY_POLICY_DO_NOT_RETRY"
+    service_account_email = module.oracle_relayer.service_account_email
+  }
+}
+
+resource "google_cloud_run_service_iam_member" "mock_aggregator_updater_invoker" {
+  for_each = local.mock_aggregator_updater_chain_configs
+  project  = module.oracle_relayer.project_id
+  location = google_cloudfunctions2_function.mock_aggregator_updater[each.key].location
+  service  = google_cloudfunctions2_function.mock_aggregator_updater[each.key].name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${module.oracle_relayer.service_account_email}"
+}
+
 # Compute a hash of the source files to detect actual changes
 # This is more reliable than using the zip's SHA256 which includes metadata
 locals {
   source_files = fileset("${path.module}/..", "src/**")
   package_files = [
     "${path.module}/../package.json",
-    "${path.module}/../package-lock.json"
+    "${path.module}/../package-lock.json",
+    "${path.module}/mock_aggregator_mappings.json"
   ]
   # Create a hash of all source files and package files
   source_hash = md5(join("", [

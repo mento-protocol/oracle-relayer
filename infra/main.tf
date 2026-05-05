@@ -1,5 +1,6 @@
 locals {
-  relayer_addresses = jsondecode(file("${path.module}/relayer_addresses.json"))
+  relayer_addresses        = jsondecode(file("${path.module}/relayer_addresses.json"))
+  mock_aggregator_mappings = jsondecode(file("${path.module}/mock_aggregator_mappings.json"))
 
   environment_chains = {
     "testnet" = ["celo-sepolia", "monad-testnet", "polygon-testnet"]
@@ -8,11 +9,17 @@ locals {
 
   chains = local.environment_chains[terraform.workspace]
 
+  mock_aggregator_updater_chains = terraform.workspace == "testnet" ? ["celo-sepolia", "monad-testnet", "polygon-testnet"] : []
+
   chain_configs = {
     for chain in local.chains : chain => {
       relayer_addresses = local.relayer_addresses[chain]
       is_production     = terraform.workspace == "mainnet"
     }
+  }
+
+  mock_aggregator_updater_chain_configs = {
+    for chain in local.mock_aggregator_updater_chains : chain => local.chain_configs[chain]
   }
 
   discord_webhook_url = terraform.workspace == "mainnet" ? var.discord_webhook_url_mainnet : var.discord_webhook_url_testnet
