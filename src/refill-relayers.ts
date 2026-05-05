@@ -8,7 +8,13 @@ import {
   parseEther,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { celo, celoSepolia, monad, monadTestnet } from "viem/chains";
+import {
+  celo,
+  celoSepolia,
+  monad,
+  monadTestnet,
+  polygonAmoy,
+} from "viem/chains";
 import { config } from "./config";
 import getSecret from "./get-secret";
 import { deriveRelayerAccount } from "./utils";
@@ -21,6 +27,7 @@ const chains: Record<string, Chain> = {
   "celo-sepolia": celoSepolia,
   monad,
   "monad-testnet": monadTestnet,
+  "polygon-testnet": polygonAmoy,
 } as const;
 
 /**
@@ -39,7 +46,7 @@ async function main() {
   const chainArg = process.argv[2];
   if (!chainArg || !(chainArg in chains)) {
     console.log(
-      "Usage: pnpm refill:celo | pnpm refill:celo-sepolia | pnpm refill:monad | pnpm refill:monad-testnet",
+      "Usage: pnpm refill:celo | pnpm refill:celo-sepolia | pnpm refill:monad | pnpm refill:monad-testnet | pnpm refill:polygon-testnet",
     );
     process.exit(1);
   }

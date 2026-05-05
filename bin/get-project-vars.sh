@@ -6,10 +6,10 @@ set -u          # Treat unset variables as an error when substituting
 # Maps a chain name to its environment (testnet/mainnet)
 chain_to_env() {
 	case "$1" in
-	celo-sepolia | monad-testnet) echo "testnet" ;;
+	celo-sepolia | monad-testnet | polygon-testnet) echo "testnet" ;;
 	celo | monad) echo "mainnet" ;;
 	*)
-		echo "Error: Unknown chain '$1'. Valid chains: celo, celo-sepolia, monad, monad-testnet" >&2
+		echo "Error: Unknown chain '$1'. Valid chains: celo, celo-sepolia, monad, monad-testnet, polygon-testnet" >&2
 		exit 1
 		;;
 	esac

@@ -75,6 +75,10 @@
     "usdc_usd": "0x34b8E391e26faf1af1c751aa4F6b5E19FBF9190B",
     "usdt_usd": "0x10D98F3777Ce2a80fA2175C5641fBB2c15c00A98"
   },
+  "polygon-testnet": {
+    "eur_usd": "0x5Aae954cD08d432DbfCF81964dE1C84E3D7aF910",
+    "usdc_usd": "0x84521737Ccd1068b0093e7Ce477d1cde3E0c7BD0"
+  },
   "monad": {
     "ausd_usd": "0x2604F6daFed5b6204868e15E89ca41C2D5f6D9c2",
     "gbp_usd": "0xDb8fc8c6DaaC8F73E21e9cC145440AB899d60e55",

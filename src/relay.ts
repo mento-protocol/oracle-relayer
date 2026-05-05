@@ -14,7 +14,13 @@ import {
   getContract,
   http,
 } from "viem";
-import { celo, celoSepolia, monad, monadTestnet } from "viem/chains";
+import {
+  celo,
+  celoSepolia,
+  monad,
+  monadTestnet,
+  polygonAmoy,
+} from "viem/chains";
 
 import type { Logger } from "winston";
 import config from "./config";
@@ -31,6 +37,7 @@ const chainMap: Record<typeof config.CHAIN, Chain> = {
   "celo-sepolia": celoSepolia,
   "monad-testnet": monadTestnet,
   monad: monad,
+  "polygon-testnet": polygonAmoy,
 };
 
 // Re-use clients across function invocations to save on initialization time and memory

@@ -2,7 +2,7 @@ locals {
   relayer_addresses = jsondecode(file("${path.module}/relayer_addresses.json"))
 
   environment_chains = {
-    "testnet" = ["celo-sepolia", "monad-testnet"]
+    "testnet" = ["celo-sepolia", "monad-testnet", "polygon-testnet"]
     "mainnet" = ["celo", "monad"]
   }
 
