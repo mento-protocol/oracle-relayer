@@ -1,9 +1,9 @@
 locals {
-  every_minute_schedule  = "* * * * *"
-  weekly_monday_schedule = "0 6 * * 1" # Mondays at 06:00 UTC
+  every_minute_schedule = "* * * * *"
+  daily_schedule        = "0 4 * * *" # Daily at 04:00 UTC
 
-  scheduler_schedule    = terraform.workspace == "mainnet" ? local.every_minute_schedule : local.weekly_monday_schedule
-  scheduler_description = terraform.workspace == "mainnet" ? "every minute" : "once a week (Mondays at 06:00 UTC)"
+  scheduler_schedule    = terraform.workspace == "mainnet" ? local.every_minute_schedule : local.daily_schedule
+  scheduler_description = terraform.workspace == "mainnet" ? "every minute" : "once a day (04:00 UTC)"
 }
 
 # Create Scheduler jobs to trigger the Cloud Function for each relayer address
