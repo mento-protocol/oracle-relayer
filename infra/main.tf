@@ -1,6 +1,5 @@
 locals {
-  relayer_addresses        = jsondecode(file("${path.module}/relayer_addresses.json"))
-  mock_aggregator_mappings = jsondecode(file("${path.module}/mock_aggregator_mappings.json"))
+  relayer_addresses = jsondecode(file("${path.module}/relayer_addresses.json"))
 
   environment_chains = {
     "testnet" = ["celo-sepolia", "monad-testnet", "polygon-testnet"]

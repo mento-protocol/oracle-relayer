@@ -7,7 +7,6 @@ import {
   http,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import fs from "fs";
 import {
   celo,
   celoSepolia,
@@ -16,12 +15,12 @@ import {
   polygon,
   polygonAmoy,
 } from "viem/chains";
-import path from "path";
 import type { Logger } from "winston";
 
 import { chainlinkAggregatorAbi } from "./chainlink-aggregator-abi";
 import getSecret from "./get-secret";
 import { mockAggregatorBatchReporterAbi } from "./mock-aggregator-batch-reporter-abi";
+import MockAggregatorMappingsJson from "./mock-aggregator-mappings.json";
 
 type ChainName =
   | "celo"
@@ -48,14 +47,8 @@ const chainMap: Record<ChainName, Chain> = {
   "polygon-testnet": polygonAmoy,
 };
 
-const sourceChainByTestnet: Partial<Record<ChainName, ChainName>> = {
-  "celo-sepolia": "celo",
-  "monad-testnet": "monad",
-  "polygon-testnet": "polygon",
-};
-
 const publicClients = new Map<ChainName, PublicClient>();
-let cachedAggregatorMappings: AllAggregatorMappings | undefined;
+const aggregatorMappings = MockAggregatorMappingsJson as AllAggregatorMappings;
 
 interface AggregatorReport {
   rateFeed: string;
@@ -69,13 +62,6 @@ export async function updateMockAggregators(
   logger: Logger,
   dryRun = false,
 ): Promise<boolean> {
-  const sourceChain = sourceChainByTestnet[targetChain];
-  if (!sourceChain) {
-    logger.error(`No source chain configured for ${targetChain}`);
-    return false;
-  }
-
-  const aggregatorMappings = getAggregatorMappings();
   const targetAggregatorMappings = aggregatorMappings[targetChain];
 
   if (!targetAggregatorMappings) {
@@ -96,7 +82,7 @@ export async function updateMockAggregators(
     reports.push(
       await buildAggregatorReport(
         rateFeed,
-        sourceChain,
+        getMainnetChain(targetChain),
         aggregatorMapping.mainnet,
         aggregatorMapping.testnet,
       ),
@@ -221,29 +207,24 @@ function getPublicClient(chainName: ChainName): PublicClient {
   return client;
 }
 
-function getAggregatorMappings(): AllAggregatorMappings {
-  if (cachedAggregatorMappings) {
-    return cachedAggregatorMappings;
-  }
-
-  const aggregatorMappingsJson =
-    process.env.MOCK_AGGREGATOR_MAPPINGS_JSON ??
-    fs.readFileSync(
-      path.resolve(process.cwd(), "infra/mock_aggregator_mappings.json"),
-      "utf8",
-    );
-
-  cachedAggregatorMappings = JSON.parse(
-    aggregatorMappingsJson,
-  ) as AllAggregatorMappings;
-  return cachedAggregatorMappings;
-}
-
 function normalizePrivateKey(privateKey: string): `0x${string}` {
   const trimmedPrivateKey = privateKey.trim();
   return trimmedPrivateKey.startsWith("0x")
     ? (trimmedPrivateKey as `0x${string}`)
     : `0x${trimmedPrivateKey}`;
+}
+
+function getMainnetChain(testnetChain: ChainName): ChainName {
+  switch (testnetChain) {
+    case "celo-sepolia":
+      return "celo";
+    case "monad-testnet":
+      return "monad";
+    case "polygon-testnet":
+      return "polygon";
+    default:
+      throw new Error(`No mainnet chain configured for ${testnetChain}`);
+  }
 }
 
 async function runCli() {
