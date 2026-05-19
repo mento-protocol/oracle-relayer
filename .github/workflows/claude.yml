@@ -6,11 +6,15 @@ on:
   pull_request_review_comment:
     types: [created]
   issues:
-    types: [opened, assigned]
+    types: [opened]
   pull_request_review:
     types: [submitted]
 
 permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.issue.node_id || github.event.comment.node_id || github.event.review.node_id || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   claude:
