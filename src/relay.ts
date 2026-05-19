@@ -50,6 +50,74 @@ const contractCodeCache = new Map<string, boolean>();
 
 type RelayerContract = GetContractReturnType<typeof relayerAbi, PublicClient>;
 
+const sortedOraclesAbi = [
+  {
+    type: "function",
+    name: "medianTimestamp",
+    inputs: [{ name: "rateFeedId", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getTokenReportExpirySeconds",
+    inputs: [{ name: "rateFeedId", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+] as const;
+
+const chainlinkAggregatorAbi = [
+  {
+    type: "function",
+    name: "latestRoundData",
+    inputs: [],
+    outputs: [
+      { name: "roundId", type: "uint80" },
+      { name: "answer", type: "int256" },
+      { name: "startedAt", type: "uint256" },
+      { name: "updatedAt", type: "uint256" },
+      { name: "answeredInRound", type: "uint80" },
+    ],
+    stateMutability: "view",
+  },
+] as const;
+
+type AggregatorDiagnostic = {
+  aggregator: Address;
+  invert: boolean;
+  latestRoundId: string;
+  latestUpdatedAt: string;
+  latestUpdatedAtIso: string;
+  latestUpdatedAtAgeSeconds: string;
+};
+
+type RelayDiagnostic = {
+  checkedAt: string;
+  checkedAtIso: string;
+  rateFeedId: Address;
+  sortedOracles: Address;
+  sortedOraclesMedianTimestamp: string;
+  sortedOraclesMedianTimestampIso: string;
+  sortedOraclesMedianTimestampAgeSeconds: string;
+  sortedOraclesReportExpirySeconds: string;
+  chainlinkAggregators: AggregatorDiagnostic[];
+  newestChainlinkUpdatedAt: string;
+  newestChainlinkUpdatedAtIso: string;
+  newestChainlinkUpdatedAtAgeSeconds: string;
+  oldestChainlinkUpdatedAt: string;
+  oldestChainlinkUpdatedAtIso: string;
+  oldestChainlinkUpdatedAtAgeSeconds: string;
+  chainlinkNewestLagVsSortedOraclesMedianSeconds: string;
+  timestampSpreadSeconds: string;
+  maxTimestampSpreadSeconds: string;
+};
+
+type ChainlinkAggregatorConfig = {
+  aggregator: Address;
+  invert: boolean;
+};
+
 export default async function relay(
   relayerAddress: string,
   rateFeedName: string,
@@ -94,6 +162,8 @@ export default async function relay(
     );
     if (revertError instanceof ContractFunctionRevertedError) {
       await handleContractFunctionRevertError(
+        contract,
+        publicClient,
         rateFeedName,
         revertError,
         logger,
@@ -218,6 +288,8 @@ async function submitTx(
  *   2. An error from a require statement, in which case we try to extract the reason
  */
 async function handleContractFunctionRevertError(
+  relayerContract: RelayerContract,
+  client: PublicClient,
   rateFeedName: string,
   revertError: ContractFunctionRevertedError,
   logger: Logger,
@@ -225,14 +297,26 @@ async function handleContractFunctionRevertError(
   const errName = revertError.data?.errorName ?? "";
   switch (errName) {
     case "TimestampNotNew": {
+      const diagnostic = await getRelayDiagnostic(relayerContract, client);
       logger.info(
-        "Relay skipped. Price from previous relay is still fresh in SortedOracles",
+        "Relay skipped. Chainlink timestamp is not newer than SortedOracles median timestamp",
+        diagnostic ?? undefined,
       );
       break;
     }
     case "ExpiredTimestamp": {
+      const diagnostic = await getRelayDiagnostic(relayerContract, client);
       logger.warn(
         "Relay not possible. The current price is too old to be relayed",
+        diagnostic ?? undefined,
+      );
+      break;
+    }
+    case "TimestampSpreadTooHigh": {
+      const diagnostic = await getRelayDiagnostic(relayerContract, client);
+      logger.warn(
+        "Relay not possible. Chainlink aggregator timestamps differ by more than maxTimestampSpread",
+        diagnostic ?? undefined,
       );
       break;
     }
@@ -253,6 +337,131 @@ async function handleContractFunctionRevertError(
       break;
     }
   }
+}
+
+async function getRelayDiagnostic(
+  relayerContract: RelayerContract,
+  client: PublicClient,
+): Promise<RelayDiagnostic | undefined> {
+  try {
+    const checkedAt = BigInt(Math.floor(Date.now() / 1000));
+    const [
+      rawRateFeedId,
+      rawSortedOracles,
+      rawMaxTimestampSpread,
+      rawAggregators,
+    ] =
+      await Promise.all([
+        relayerContract.read.rateFeedId(),
+        relayerContract.read.sortedOracles(),
+        relayerContract.read.maxTimestampSpread(),
+        relayerContract.read.getAggregators(),
+      ]);
+    const rateFeedId = rawRateFeedId as Address;
+    const sortedOracles = rawSortedOracles as Address;
+    const maxTimestampSpread = rawMaxTimestampSpread as bigint;
+    const aggregators = rawAggregators as ChainlinkAggregatorConfig[];
+
+    const [medianTimestamp, reportExpirySeconds, aggregatorRounds] =
+      await Promise.all([
+        client.readContract({
+          address: sortedOracles,
+          abi: sortedOraclesAbi,
+          functionName: "medianTimestamp",
+          args: [rateFeedId],
+        }),
+        client.readContract({
+          address: sortedOracles,
+          abi: sortedOraclesAbi,
+          functionName: "getTokenReportExpirySeconds",
+          args: [rateFeedId],
+        }),
+        Promise.all(
+          aggregators.map(async ({ aggregator, invert }) => {
+            const [roundId, , , updatedAt] = await client.readContract({
+              address: aggregator,
+              abi: chainlinkAggregatorAbi,
+              functionName: "latestRoundData",
+            });
+
+            return {
+              aggregator,
+              invert,
+              latestRoundId: roundId.toString(),
+              latestUpdatedAt: updatedAt.toString(),
+              latestUpdatedAtIso: formatUnixTimestamp(updatedAt),
+              latestUpdatedAtAgeSeconds: secondsSince(
+                checkedAt,
+                updatedAt,
+              ).toString(),
+            };
+          }),
+        ),
+      ]);
+
+    const updatedAts: bigint[] = aggregatorRounds.map(({ latestUpdatedAt }) =>
+      BigInt(latestUpdatedAt),
+    );
+    const oldestChainlinkUpdatedAt = updatedAts.reduce((oldest, updatedAt) =>
+      updatedAt < oldest ? updatedAt : oldest,
+    );
+    const newestChainlinkUpdatedAt = updatedAts.reduce((newest, updatedAt) =>
+      updatedAt > newest ? updatedAt : newest,
+    );
+
+    return {
+      checkedAt: checkedAt.toString(),
+      checkedAtIso: formatUnixTimestamp(checkedAt),
+      rateFeedId,
+      sortedOracles,
+      sortedOraclesMedianTimestamp: medianTimestamp.toString(),
+      sortedOraclesMedianTimestampIso: formatUnixTimestamp(medianTimestamp),
+      sortedOraclesMedianTimestampAgeSeconds: secondsSince(
+        checkedAt,
+        medianTimestamp,
+      ).toString(),
+      sortedOraclesReportExpirySeconds: reportExpirySeconds.toString(),
+      chainlinkAggregators: aggregatorRounds,
+      newestChainlinkUpdatedAt: newestChainlinkUpdatedAt.toString(),
+      newestChainlinkUpdatedAtIso: formatUnixTimestamp(newestChainlinkUpdatedAt),
+      newestChainlinkUpdatedAtAgeSeconds: secondsSince(
+        checkedAt,
+        newestChainlinkUpdatedAt,
+      ).toString(),
+      oldestChainlinkUpdatedAt: oldestChainlinkUpdatedAt.toString(),
+      oldestChainlinkUpdatedAtIso: formatUnixTimestamp(oldestChainlinkUpdatedAt),
+      oldestChainlinkUpdatedAtAgeSeconds: secondsSince(
+        checkedAt,
+        oldestChainlinkUpdatedAt,
+      ).toString(),
+      chainlinkNewestLagVsSortedOraclesMedianSeconds: positiveDiff(
+        medianTimestamp,
+        newestChainlinkUpdatedAt,
+      ).toString(),
+      timestampSpreadSeconds: (
+        newestChainlinkUpdatedAt - oldestChainlinkUpdatedAt
+      ).toString(),
+      maxTimestampSpreadSeconds: maxTimestampSpread.toString(),
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+function formatUnixTimestamp(timestamp: bigint): string {
+  if (timestamp === 0n) {
+    return "never";
+  }
+
+  return new Date(Number(timestamp) * 1000).toISOString();
+}
+
+function secondsSince(now: bigint, timestamp: bigint): bigint {
+  return positiveDiff(now, timestamp);
+}
+
+function positiveDiff(left: bigint, right: bigint): bigint {
+  return left > right ? left - right : 0n;
 }
 
 async function handleNonRevertError(
