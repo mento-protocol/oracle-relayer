@@ -401,11 +401,14 @@ async function getRelayDiagnostic(
     const updatedAts: bigint[] = aggregatorRounds.map(({ latestUpdatedAt }) =>
       BigInt(latestUpdatedAt),
     );
-    const oldestChainlinkUpdatedAt = updatedAts.reduce((oldest, updatedAt) =>
-      updatedAt < oldest ? updatedAt : oldest,
+    const oldestChainlinkUpdatedAt = updatedAts.reduce(
+      (oldest, updatedAt) =>
+        oldest === 0n || updatedAt < oldest ? updatedAt : oldest,
+      0n,
     );
-    const newestChainlinkUpdatedAt = updatedAts.reduce((newest, updatedAt) =>
-      updatedAt > newest ? updatedAt : newest,
+    const newestChainlinkUpdatedAt = updatedAts.reduce(
+      (newest, updatedAt) => (updatedAt > newest ? updatedAt : newest),
+      0n,
     );
 
     return {
