@@ -83,16 +83,16 @@ const chainlinkAggregatorAbi = [
   },
 ] as const;
 
-type AggregatorDiagnostic = {
+interface AggregatorDiagnostic {
   aggregator: Address;
   invert: boolean;
   latestRoundId: string;
   latestUpdatedAt: string;
   latestUpdatedAtIso: string;
   latestUpdatedAtAgeSeconds: string;
-};
+}
 
-type RelayDiagnostic = {
+interface RelayDiagnostic {
   checkedAt: string;
   checkedAtIso: string;
   rateFeedId: Address;
@@ -111,12 +111,12 @@ type RelayDiagnostic = {
   chainlinkNewestLagVsSortedOraclesMedianSeconds: string;
   timestampSpreadSeconds: string;
   maxTimestampSpreadSeconds: string;
-};
+}
 
-type ChainlinkAggregatorConfig = {
+interface ChainlinkAggregatorConfig {
   aggregator: Address;
   invert: boolean;
-};
+}
 
 export default async function relay(
   relayerAddress: string,
@@ -350,13 +350,12 @@ async function getRelayDiagnostic(
       rawSortedOracles,
       rawMaxTimestampSpread,
       rawAggregators,
-    ] =
-      await Promise.all([
-        relayerContract.read.rateFeedId(),
-        relayerContract.read.sortedOracles(),
-        relayerContract.read.maxTimestampSpread(),
-        relayerContract.read.getAggregators(),
-      ]);
+    ] = await Promise.all([
+      relayerContract.read.rateFeedId(),
+      relayerContract.read.sortedOracles(),
+      relayerContract.read.maxTimestampSpread(),
+      relayerContract.read.getAggregators(),
+    ]);
     const rateFeedId = rawRateFeedId as Address;
     const sortedOracles = rawSortedOracles as Address;
     const maxTimestampSpread = rawMaxTimestampSpread as bigint;
@@ -423,13 +422,17 @@ async function getRelayDiagnostic(
       sortedOraclesReportExpirySeconds: reportExpirySeconds.toString(),
       chainlinkAggregators: aggregatorRounds,
       newestChainlinkUpdatedAt: newestChainlinkUpdatedAt.toString(),
-      newestChainlinkUpdatedAtIso: formatUnixTimestamp(newestChainlinkUpdatedAt),
+      newestChainlinkUpdatedAtIso: formatUnixTimestamp(
+        newestChainlinkUpdatedAt,
+      ),
       newestChainlinkUpdatedAtAgeSeconds: secondsSince(
         checkedAt,
         newestChainlinkUpdatedAt,
       ).toString(),
       oldestChainlinkUpdatedAt: oldestChainlinkUpdatedAt.toString(),
-      oldestChainlinkUpdatedAtIso: formatUnixTimestamp(oldestChainlinkUpdatedAt),
+      oldestChainlinkUpdatedAtIso: formatUnixTimestamp(
+        oldestChainlinkUpdatedAt,
+      ),
       oldestChainlinkUpdatedAtAgeSeconds: secondsSince(
         checkedAt,
         oldestChainlinkUpdatedAt,
