@@ -46,14 +46,17 @@ async function main() {
   const chainArg = process.argv[2];
   if (!chainArg || !(chainArg in chains)) {
     console.log(
-      "Usage: pnpm refill:celo | pnpm refill:celo-sepolia | pnpm refill:monad | pnpm refill:monad-testnet | pnpm refill:polygon-testnet",
+      "Usage: pnpm refill:celo | pnpm refill:celo-sepolia | pnpm refill:monad | pnpm refill:monad-testnet | pnpm refill:polygon-testnet [--dry-run]",
     );
     process.exit(1);
   }
 
+  const dryRun = process.argv.includes("--dry-run");
   const chain = chains[chainArg];
   const symbol = chain.nativeCurrency.symbol;
-  console.log(`Refilling relayer accounts on ${chainArg}...`);
+  console.log(
+    `Refilling relayer accounts on ${chainArg}${dryRun ? " (dry run)" : ""}...`,
+  );
 
   const relayerAddressesPath = path.resolve(
     process.cwd(),
@@ -100,8 +103,18 @@ async function main() {
 
     if (balanceInNative < MIN_BALANCE_THRESHOLD) {
       console.log(
-        `  Low balance detected. Transferring ${TRANSFER_AMOUNT.toString()} ${symbol}...`,
+        `  Low balance detected. ${dryRun ? "Would transfer" : "Transferring"} ${TRANSFER_AMOUNT.toString()} ${symbol}...`,
       );
+
+      if (dryRun) {
+        transfersMade.push({
+          rateFeed: rateFeedKey,
+          address: relayerAccount.address,
+          amount: TRANSFER_AMOUNT,
+          hash: "(dry run — not submitted)",
+        });
+        continue;
+      }
 
       try {
         const hash = await walletClient.sendTransaction({
@@ -110,7 +123,6 @@ async function main() {
           chain,
         });
         await publicClient.waitForTransactionReceipt({ hash });
-        // let hash = "0x1234567890";
 
         console.log(`  Transaction sent: ${hash}`);
         transfersMade.push({
