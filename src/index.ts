@@ -52,7 +52,17 @@ cloudEvent("relay", async (event: CloudEvent<PubsubData>) => {
 cloudEvent("updateMockAggregators", async (event: CloudEvent<PubsubData>) => {
   const traceId = getTraceId(event);
   const logger = getLogger("mock-aggregator-updater", traceId);
-  const ok = await updateMockAggregators(config.CHAIN, logger);
+
+  let ok: boolean;
+  try {
+    ok = await updateMockAggregators(config.CHAIN, logger);
+  } catch (error) {
+    logger.error(
+      "Mock aggregator update failed with an unhandled error",
+      error,
+    );
+    return { status: "error", message: "Mock aggregator update failed" };
+  }
 
   if (!ok) {
     return { status: "error", message: "Mock aggregator update failed" };
