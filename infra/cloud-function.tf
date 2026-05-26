@@ -81,6 +81,8 @@ resource "google_cloudfunctions2_function" "mock_aggregator_updater" {
 
     environment_variables = {
       GCP_PROJECT_ID                                 = module.oracle_relayer.project_id
+      DISCORD_WEBHOOK_URL_SECRET_ID                  = google_secret_manager_secret.discord_webhook_url.secret_id
+      RELAYER_MNEMONIC_SECRET_ID                     = google_secret_manager_secret.relayer_mnemonic.secret_id
       MOCK_AGGREGATOR_REPORTER_PRIVATE_KEY_SECRET_ID = google_secret_manager_secret.mock_aggregator_reporter_private_key[0].secret_id
       LOG_EXECUTION_ID                               = "true"
       NODE_ENV                                       = "development"
