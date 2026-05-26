@@ -49,6 +49,8 @@ const chainMap: Record<ChainName, Chain> = {
 
 const publicClients = new Map<ChainName, PublicClient>();
 const aggregatorMappings = MockAggregatorMappingsJson as AllAggregatorMappings;
+const mockAggregatorBatchReporterAddress =
+  "0xbF111982C39b661D1Cbc1621EB1450694Fae1D3f" as const;
 
 interface AggregatorReport {
   rateFeed: string;
@@ -143,12 +145,6 @@ async function submitBatchReport(
   reports: AggregatorReport[],
   logger: Logger,
 ): Promise<boolean> {
-  const reporterAddress = process.env.MOCK_AGGREGATOR_BATCH_REPORTER_ADDRESS;
-  if (!reporterAddress) {
-    logger.error("MOCK_AGGREGATOR_BATCH_REPORTER_ADDRESS is not set");
-    return false;
-  }
-
   const privateKeySecretId =
     process.env.MOCK_AGGREGATOR_REPORTER_PRIVATE_KEY_SECRET_ID;
   if (!privateKeySecretId) {
@@ -167,7 +163,7 @@ async function submitBatchReport(
   });
 
   const contract = getContract({
-    address: getAddress(reporterAddress),
+    address: mockAggregatorBatchReporterAddress,
     abi: mockAggregatorBatchReporterAbi,
     client: { public: publicClient, wallet: walletClient },
   });

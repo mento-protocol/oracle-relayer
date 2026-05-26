@@ -40,12 +40,6 @@ variable "mock_aggregator_reporter_private_key" {
   default   = ""
 }
 
-variable "mock_aggregator_batch_reporter_addresses" {
-  type        = map(string)
-  description = "MockAggregatorBatchReporter address per testnet chain."
-  default     = {}
-}
-
 # Webhook URL to send monitoring alerts from within GCP Monitoring
 # You can find this URL in Victorops by going to "Integrations" -> "Stackdriver".
 # The routing key can be found under "Settings" -> "Routing Keys"

@@ -82,7 +82,6 @@ resource "google_cloudfunctions2_function" "mock_aggregator_updater" {
     environment_variables = {
       GCP_PROJECT_ID                                 = module.oracle_relayer.project_id
       MOCK_AGGREGATOR_REPORTER_PRIVATE_KEY_SECRET_ID = google_secret_manager_secret.mock_aggregator_reporter_private_key[0].secret_id
-      MOCK_AGGREGATOR_BATCH_REPORTER_ADDRESS         = var.mock_aggregator_batch_reporter_addresses[each.key]
       LOG_EXECUTION_ID                               = "true"
       NODE_ENV                                       = "development"
       CHAIN                                          = each.key

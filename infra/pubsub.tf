@@ -49,7 +49,7 @@ resource "google_pubsub_topic" "relay" {
 resource "google_pubsub_topic" "mock_aggregator_updates" {
   for_each = local.mock_aggregator_updater_chain_configs
   project  = module.oracle_relayer.project_id
-  name     = "mock-aggregator-updates-${terraform.workspace}-${each.key}"
+  name     = "mock-aggregator-updates-${each.key}"
 
   message_retention_duration = "604800s" # 7 days (max. allowed by GCP)
 
