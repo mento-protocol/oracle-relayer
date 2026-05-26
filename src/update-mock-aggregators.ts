@@ -172,11 +172,10 @@ async function submitBatchReport(
   const answers = reports.map((report) => report.answer);
   const timestamps = reports.map((report) => report.updatedAt);
 
-  const { request } = await contract.simulate.batchReport([
-    aggregators,
-    answers,
-    timestamps,
-  ]);
+  const { request } = await contract.simulate.batchReport(
+    [aggregators, answers, timestamps],
+    { account },
+  );
   const hash = await walletClient.writeContract(request);
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
 
