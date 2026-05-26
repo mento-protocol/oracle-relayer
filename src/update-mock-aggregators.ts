@@ -50,7 +50,7 @@ const chainMap: Record<ChainName, Chain> = {
 const publicClients = new Map<ChainName, PublicClient>();
 const aggregatorMappings = MockAggregatorMappingsJson as AllAggregatorMappings;
 const mockAggregatorBatchReporterAddress =
-  "0xbF111982C39b661D1Cbc1621EB1450694Fae1D3f" as const;
+  "0xbF111982C39b661D1Cbc1621EB1450694Fae1D3f";
 
 interface AggregatorReport {
   rateFeed: string;
@@ -97,7 +97,7 @@ export async function updateMockAggregators(
   }
 
   logger.info(
-    `Prepared ${reports.length} mock aggregator updates for ${targetChain}`,
+    `Prepared ${reports.length.toString()} mock aggregator updates for ${targetChain}`,
   );
 
   if (dryRun) {
