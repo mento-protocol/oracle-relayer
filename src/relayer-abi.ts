@@ -21,9 +21,19 @@ export const relayerAbi = [
   },
   {
     type: "function",
-    name: "chainlinkAggregator",
+    name: "getAggregators",
     inputs: [],
-    outputs: [{ name: "", type: "address", internalType: "address" }],
+    outputs: [
+      {
+        name: "",
+        type: "tuple[]",
+        internalType: "struct IChainlinkRelayer.ChainlinkAggregator[]",
+        components: [
+          { name: "aggregator", type: "address", internalType: "address" },
+          { name: "invert", type: "bool", internalType: "bool" },
+        ],
+      },
+    ],
     stateMutability: "view",
   },
   {
@@ -31,6 +41,13 @@ export const relayerAbi = [
     name: "rateFeedId",
     inputs: [],
     outputs: [{ name: "", type: "address", internalType: "address" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "maxTimestampSpread",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
     stateMutability: "view",
   },
   {
@@ -48,6 +65,8 @@ export const relayerAbi = [
     stateMutability: "view",
   },
   { type: "error", name: "ExpiredTimestamp", inputs: [] },
+  { type: "error", name: "InvalidPrice", inputs: [] },
   { type: "error", name: "NegativePrice", inputs: [] },
+  { type: "error", name: "TimestampSpreadTooHigh", inputs: [] },
   { type: "error", name: "TimestampNotNew", inputs: [] },
 ];
