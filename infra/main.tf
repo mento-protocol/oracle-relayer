@@ -31,6 +31,14 @@ locals {
         chain           = chain
         rate_feed_key   = feed
         relayer_address = addr
+        # CELO/XXX pairs (except CELO/USD) are gas feeds, which don't need
+        # frequent updates, so on Celo mainnet they only run once a day.
+        is_gas_feed = (
+          terraform.workspace == "mainnet" &&
+          chain == "celo" &&
+          startswith(feed, "celo_") &&
+          feed != "celo_usd"
+        )
       }
     }
   ]...)

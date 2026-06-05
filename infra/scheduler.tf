@@ -1,6 +1,7 @@
 locals {
   every_minute_schedule = "* * * * *"
   daily_schedule        = "0 4 * * *" # Daily at 04:00 UTC
+  gas_feed_schedule     = "0 0 * * *" # Daily at 00:00 UTC
 
   scheduler_schedule    = terraform.workspace == "mainnet" ? local.every_minute_schedule : local.daily_schedule
   scheduler_description = terraform.workspace == "mainnet" ? "every minute" : "once a day (04:00 UTC)"
@@ -13,8 +14,9 @@ resource "google_cloud_scheduler_job" "relay_jobs" {
   project     = module.oracle_relayer.project_id
   region      = var.region
   name        = "${var.scheduler_job_name}-${each.value.rate_feed_key}-${each.value.chain}"
-  description = "Emits a relay event for ${each.value.rate_feed_key} on ${each.value.chain} to Pub/Sub ${local.scheduler_description} with the relayer address ${each.value.relayer_address}"
-  schedule    = local.scheduler_schedule
+  description = "Emits a relay event for ${each.value.rate_feed_key} on ${each.value.chain} to Pub/Sub ${each.value.is_gas_feed ? "once a day (00:00 UTC)" : local.scheduler_description} with the relayer address ${each.value.relayer_address}"
+  schedule    = each.value.is_gas_feed ? local.gas_feed_schedule : local.scheduler_schedule
+  time_zone   = "Etc/UTC"
 
   pubsub_target {
     topic_name = google_pubsub_topic.relay[each.value.chain].id
