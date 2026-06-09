@@ -164,32 +164,36 @@ export default async function relay(
 ): Promise<boolean> {
   logger.info(`Relay request received for ${relayerAddress}`);
 
-  await initTransport();
-
-  if (!(await isContract(relayerAddress))) {
-    logger.error(
-      `Relay failed. Relayer address ${relayerAddress} is not a contract.`,
-    );
-    return false;
-  }
-
-  const publicClient = getOrCreatePublicClient();
-  const wallet = await getOrCreateWalletClient(rateFeedName);
-
-  const contract: RelayerContract = getContract({
-    address: relayerAddress as Address,
-    abi: relayerAbi,
-    client: { public: publicClient, wallet },
-  });
+  // Declared outside the try so the catch can use whatever was already
+  // initialized. The try covers every RPC-touching step (not just submitTx):
+  // a viem error thrown e.g. by isContract's getCode would otherwise escape to
+  // the Functions runtime unredacted and leak the dedicated RPC URL into logs.
+  let client: PublicClient | undefined;
+  let contract: RelayerContract | undefined;
+  let signerAddress = "<undefined>";
 
   try {
-    return await submitTx(
-      contract,
-      publicClient,
-      wallet,
-      isRetryAttempt,
-      logger,
-    );
+    await initTransport();
+
+    if (!(await isContract(relayerAddress))) {
+      logger.error(
+        `Relay failed. Relayer address ${relayerAddress} is not a contract.`,
+      );
+      return false;
+    }
+
+    client = getOrCreatePublicClient();
+    const wallet = await getOrCreateWalletClient(rateFeedName);
+    signerAddress =
+      (wallet.account?.address as string | undefined) ?? "<undefined>";
+
+    contract = getContract({
+      address: relayerAddress as Address,
+      abi: relayerAbi,
+      client: { public: client, wallet },
+    });
+
+    return await submitTx(contract, client, wallet, isRetryAttempt, logger);
   } catch (err) {
     if (!(err instanceof BaseError)) {
       // Theoretically should never happen, as all errors in Viem should extend BaseError
@@ -204,10 +208,17 @@ export default async function relay(
     const revertError = err.walk(
       (err) => err instanceof ContractFunctionRevertedError,
     );
-    if (revertError instanceof ContractFunctionRevertedError) {
+    // A revert can only originate from simulate/write on the contract, so
+    // contract/client are always initialized on this path — the guard just
+    // satisfies the type system.
+    if (
+      revertError instanceof ContractFunctionRevertedError &&
+      contract &&
+      client
+    ) {
       await handleContractFunctionRevertError(
         contract,
-        publicClient,
+        client,
         rateFeedName,
         revertError,
         logger,
@@ -218,8 +229,6 @@ export default async function relay(
     // At this point we know that the error is not a revert from the contract, so it could be an error
     // from the rpc client, i.e. not enough balance, incorrect nonce, tx broadcast timeout, etc,. in
     // which case the shortMessage should be descriptive enough
-    const signerAddress =
-      (wallet.account?.address as string | undefined) ?? "<undefined>";
     return await handleNonRevertError(
       relayerAddress,
       rateFeedName,
