@@ -48,7 +48,7 @@ resource "google_secret_manager_secret_version" "discord_webhook_url" {
 # load-balanced across lagging nodes (cause of "nonce too low" rejections).
 # Consumed by the celo cloud function via the RPC_URL_SECRET_ID env var.
 resource "google_secret_manager_secret" "celo_rpc_url" {
-  count     = terraform.workspace == "mainnet" && var.celo_rpc_url != "" ? 1 : 0
+  count     = terraform.workspace == "mainnet" && local.celo_rpc_url_enabled ? 1 : 0
   project   = module.oracle_relayer.project_id
   secret_id = var.rpc_url_secret_id
 
@@ -58,7 +58,7 @@ resource "google_secret_manager_secret" "celo_rpc_url" {
 }
 
 resource "google_secret_manager_secret_version" "celo_rpc_url" {
-  count       = terraform.workspace == "mainnet" && var.celo_rpc_url != "" ? 1 : 0
+  count       = terraform.workspace == "mainnet" && local.celo_rpc_url_enabled ? 1 : 0
   secret      = google_secret_manager_secret.celo_rpc_url[0].id
   secret_data = var.celo_rpc_url
 }
