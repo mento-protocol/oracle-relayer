@@ -14,6 +14,8 @@ locals {
     for chain in local.chains : chain => {
       relayer_addresses = local.relayer_addresses[chain]
       is_production     = terraform.workspace == "mainnet"
+      # Only celo (mainnet) uses a dedicated RPC URL for now; null => default public RPC
+      rpc_url_secret_id = (chain == "celo" && var.celo_rpc_url != "") ? var.rpc_url_secret_id : null
     }
   }
 

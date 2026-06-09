@@ -24,15 +24,19 @@ resource "google_cloudfunctions2_function" "relay" {
     service_account_email = module.oracle_relayer.service_account_email
     timeout_seconds       = 60
 
-    environment_variables = {
-      GCP_PROJECT_ID                = module.oracle_relayer.project_id
-      DISCORD_WEBHOOK_URL_SECRET_ID = google_secret_manager_secret.discord_webhook_url.secret_id
-      RELAYER_MNEMONIC_SECRET_ID    = google_secret_manager_secret.relayer_mnemonic.secret_id
-      # Logs execution ID for easier debugging => https://cloud.google.com/functions/docs/monitoring/logging#viewing_runtime_logs
-      LOG_EXECUTION_ID = "true"
-      NODE_ENV         = each.value.is_production ? "production" : "development"
-      CHAIN            = each.key
-    }
+    environment_variables = merge(
+      {
+        GCP_PROJECT_ID                = module.oracle_relayer.project_id
+        DISCORD_WEBHOOK_URL_SECRET_ID = google_secret_manager_secret.discord_webhook_url.secret_id
+        RELAYER_MNEMONIC_SECRET_ID    = google_secret_manager_secret.relayer_mnemonic.secret_id
+        # Logs execution ID for easier debugging => https://cloud.google.com/functions/docs/monitoring/logging#viewing_runtime_logs
+        LOG_EXECUTION_ID = "true"
+        NODE_ENV         = each.value.is_production ? "production" : "development"
+        CHAIN            = each.key
+      },
+      # Only set when a dedicated RPC URL is configured for this chain (see secret-manager.tf)
+      each.value.rpc_url_secret_id != null ? { RPC_URL_SECRET_ID = each.value.rpc_url_secret_id } : {},
+    )
   }
 
   event_trigger {

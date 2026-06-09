@@ -3,6 +3,7 @@ import type {
   Chain,
   GetContractReturnType,
   PublicClient,
+  Transport,
   WalletClient,
 } from "viem";
 import {
@@ -11,8 +12,10 @@ import {
   createPublicClient,
   createWalletClient,
   encodeFunctionData,
+  fallback,
   getContract,
   http,
+  NonceTooLowError,
 } from "viem";
 import {
   celo,
@@ -48,6 +51,34 @@ const walletClients: Map<string, WalletClient> = new Map<
   WalletClient
 >();
 const contractCodeCache = new Map<string, boolean>();
+
+// Shared transport, initialized once per instance via initTransport(). When an
+// RPC URL secret is configured we prefer it (a dedicated endpoint with
+// consistent state) and fall back to the chain's default public RPC. The
+// default public RPCs (e.g. Celo's Forno) are load-balanced across nodes at
+// differing chain heights, whose lagging reads cause "nonce too low" rejections
+// and stale receipt/price reads.
+let cachedTransport: Transport | undefined;
+
+async function initTransport(): Promise<void> {
+  if (cachedTransport) {
+    return;
+  }
+  // Only cache on success: if the secret load throws, leave cachedTransport
+  // unset so the next invocation retries instead of pinning this warm instance
+  // to the default RPC. Treated as a hard dependency like the mnemonic secret —
+  // both fail the relay (and retry next minute) if Secret Manager is unreachable.
+  const rpcUrl = config.RPC_URL_SECRET_ID
+    ? (await getSecret(config.RPC_URL_SECRET_ID)).trim()
+    : undefined;
+  cachedTransport = rpcUrl ? fallback([http(rpcUrl), http()]) : http();
+}
+
+function getTransport(): Transport {
+  // initTransport() runs at the top of relay() before any client is created
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  return cachedTransport!;
+}
 
 type RelayerContract = GetContractReturnType<typeof relayerAbi, PublicClient>;
 
@@ -110,6 +141,8 @@ export default async function relay(
   isRetryAttempt = false,
 ): Promise<boolean> {
   logger.info(`Relay request received for ${relayerAddress}`);
+
+  await initTransport();
 
   if (!(await isContract(relayerAddress))) {
     logger.error(
@@ -181,7 +214,7 @@ function getOrCreatePublicClient(): PublicClient {
   if (!publicClient) {
     publicClient = createPublicClient({
       chain: chainMap[config.CHAIN],
-      transport: http(),
+      transport: getTransport(),
       // NOTE: viem's typescript support is super annoying, couldn't figure out how to make this work without the cast
     }) as unknown as PublicClient;
   }
@@ -199,7 +232,7 @@ async function getOrCreateWalletClient(
     const newWalletClient = createWalletClient({
       account: deriveRelayerAccount(mnemonic, rateFeedName),
       chain: chainMap[config.CHAIN],
-      transport: http(),
+      transport: getTransport(),
     });
     walletClients.set(rateFeedName, newWalletClient);
   }
@@ -463,6 +496,25 @@ async function handleNonRevertError(
   err: BaseError,
   logger: Logger,
 ): Promise<boolean> {
+  // A stale nonce read — e.g. from a lagging public RPC node that hasn't yet
+  // seen our previous tx — makes the sequencer reject the tx as "nonce too low".
+  // The tx never broadcasts, so it's safe to re-fetch the nonce and submit once
+  // more (the retry re-reads getTransactionCount from the configured RPC).
+  // viem's NonceTooLowError also covers "already known" / "transaction already
+  // imported", which instead mean the tx is already in the mempool — retrying
+  // those with a fresh nonce would broadcast a duplicate relay, so match the
+  // strict "nonce too low" message rather than the error class alone.
+  const nonceError = err.walk((e) => e instanceof NonceTooLowError);
+  const isStaleNonce =
+    nonceError instanceof NonceTooLowError &&
+    /nonce too low/i.test(`${nonceError.details} ${err.details}`);
+  if (!isRetryAttempt && isStaleNonce) {
+    logger.info(
+      `Relay failed with a stale nonce for signer ${signerAddress}, will retry once with a fresh nonce`,
+    );
+    return await relay(relayerAddress, rateFeedName, logger, true);
+  }
+
   switch (err.details) {
     case "insufficient funds for transfer":
       logger.error(

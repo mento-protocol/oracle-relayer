@@ -41,3 +41,24 @@ resource "google_secret_manager_secret_version" "discord_webhook_url" {
   secret      = google_secret_manager_secret.discord_webhook_url.id
   secret_data = local.discord_webhook_url
 }
+
+# Dedicated Celo mainnet RPC URL (e.g. a QuickNode HTTPS endpoint). Optional:
+# created only on the mainnet workspace when `celo_rpc_url` is set. The relayer
+# uses it as its primary RPC and falls back to the public Forno RPC, which is
+# load-balanced across lagging nodes (cause of "nonce too low" rejections).
+# Consumed by the celo cloud function via the RPC_URL_SECRET_ID env var.
+resource "google_secret_manager_secret" "celo_rpc_url" {
+  count     = terraform.workspace == "mainnet" && var.celo_rpc_url != "" ? 1 : 0
+  project   = module.oracle_relayer.project_id
+  secret_id = var.rpc_url_secret_id
+
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret_version" "celo_rpc_url" {
+  count       = terraform.workspace == "mainnet" && var.celo_rpc_url != "" ? 1 : 0
+  secret      = google_secret_manager_secret.celo_rpc_url[0].id
+  secret_data = var.celo_rpc_url
+}
