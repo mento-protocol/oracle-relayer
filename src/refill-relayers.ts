@@ -20,7 +20,13 @@ import getSecret from "./get-secret";
 import { deriveRelayerAccount } from "./utils";
 
 const MIN_BALANCE_THRESHOLD = 50;
-const TRANSFER_AMOUNT = 100;
+const TRANSFER_AMOUNT = 50;
+
+// Gas feeds (the CELO_XXX feeds, except CELO/USD) relay at most once per day, so
+// they burn through CELO far more slowly. They get a lower refill threshold but
+// the same top-up amount.
+const GAS_FEED_MIN_BALANCE_THRESHOLD = 5;
+const GAS_FEED_TRANSFER_AMOUNT = 10;
 
 const chains: Record<string, Chain> = {
   celo,
@@ -40,6 +46,17 @@ const chains: Record<string, Chain> = {
 function convertRateFeedFormat(rateFeedKey: string): string {
   const parts = rateFeedKey.split("_").map((part) => part.toUpperCase());
   return parts.join("/");
+}
+
+/**
+ * Whether a rate feed is a gas feed, i.e. a CELO_XXX feed other than CELO/USD.
+ * These relay at most once per day and so use a lower refill threshold.
+ *
+ * @param rateFeedKey The rate feed key from the JSON file (e.g., "celo_php")
+ * @returns true if the feed is a gas feed
+ */
+function isGasFeed(rateFeedKey: string): boolean {
+  return rateFeedKey.startsWith("celo_") && rateFeedKey !== "celo_usd";
 }
 
 async function main() {
@@ -92,6 +109,15 @@ async function main() {
   for (const [rateFeedKey] of Object.entries(relayerAddresses)) {
     const rateFeedName = convertRateFeedFormat(rateFeedKey);
     const relayerAccount = deriveRelayerAccount(mnemonic, rateFeedName);
+
+    // Gas feeds only get the relaxed threshold on celo mainnet, where the
+    // once-per-day relay economics apply.
+    const gasFeed = chainArg === "celo" && isGasFeed(rateFeedKey);
+    const threshold = gasFeed
+      ? GAS_FEED_MIN_BALANCE_THRESHOLD
+      : MIN_BALANCE_THRESHOLD;
+    const transferAmount = gasFeed ? GAS_FEED_TRANSFER_AMOUNT : TRANSFER_AMOUNT;
+
     const balance = await publicClient.getBalance({
       address: relayerAccount.address,
     });
@@ -101,16 +127,16 @@ async function main() {
       `${rateFeedKey}: ${relayerAccount.address} - Balance: ${balanceInNative.toFixed(4)} ${symbol}`,
     );
 
-    if (balanceInNative < MIN_BALANCE_THRESHOLD) {
+    if (balanceInNative < threshold) {
       console.log(
-        `  Low balance detected. ${dryRun ? "Would transfer" : "Transferring"} ${TRANSFER_AMOUNT.toString()} ${symbol}...`,
+        `  Low balance detected. ${dryRun ? "Would transfer" : "Transferring"} ${transferAmount.toString()} ${symbol}...`,
       );
 
       if (dryRun) {
         transfersMade.push({
           rateFeed: rateFeedKey,
           address: relayerAccount.address,
-          amount: TRANSFER_AMOUNT,
+          amount: transferAmount,
           hash: "(dry run — not submitted)",
         });
         continue;
@@ -119,7 +145,7 @@ async function main() {
       try {
         const hash = await walletClient.sendTransaction({
           to: relayerAccount.address,
-          value: parseEther(TRANSFER_AMOUNT.toString()),
+          value: parseEther(transferAmount.toString()),
           chain,
         });
         await publicClient.waitForTransactionReceipt({ hash });
@@ -128,7 +154,7 @@ async function main() {
         transfersMade.push({
           rateFeed: rateFeedKey,
           address: relayerAccount.address,
-          amount: TRANSFER_AMOUNT,
+          amount: transferAmount,
           hash,
         });
       } catch (error) {
