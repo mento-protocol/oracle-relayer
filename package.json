@@ -57,7 +57,10 @@
     "test:monad-testnet": "./bin/test-deployed-function.sh monad-testnet",
     "test:polygon-testnet": "./bin/test-deployed-function.sh polygon-testnet",
     "testnet": "terraform -chdir=infra workspace select testnet && npm run cache:clear",
-    "todo": "git ls-files -c --exclude-standard | grep -v \"package.json\" | xargs grep -n -i --color \"TODO:\\|FIXME:\" || true"
+    "todo": "git ls-files -c --exclude-standard | grep -v \"package.json\" | xargs grep -n -i --color \"TODO:\\|FIXME:\" || true",
+    "update:mocks:celo-sepolia": "CHAIN=celo-sepolia NODE_ENV=development npx ts-node ./src/update-mock-aggregators.ts celo-sepolia",
+    "update:mocks:monad-testnet": "CHAIN=monad-testnet NODE_ENV=development npx ts-node ./src/update-mock-aggregators.ts monad-testnet",
+    "update:mocks:polygon-testnet": "CHAIN=polygon-testnet NODE_ENV=development npx ts-node ./src/update-mock-aggregators.ts polygon-testnet"
   },
   "dependencies": {
     "@google-cloud/functions-framework": "^3.4.2",

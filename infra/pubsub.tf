@@ -45,3 +45,14 @@ resource "google_pubsub_topic" "relay" {
 
   depends_on = [module.oracle_relayer]
 }
+
+resource "google_pubsub_topic" "mock_aggregator_updates" {
+  # checkov:skip=CKV_GCP_83:The Pub/Sub messages do not contain sensitive data
+  for_each = local.mock_aggregator_updater_chain_configs
+  project  = module.oracle_relayer.project_id
+  name     = "mock-aggregator-updates-${each.key}"
+
+  message_retention_duration = "604800s" # 7 days (max. allowed by GCP)
+
+  depends_on = [module.oracle_relayer]
+}

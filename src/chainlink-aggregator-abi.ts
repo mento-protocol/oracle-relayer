@@ -1,0 +1,15 @@
+export const chainlinkAggregatorAbi = [
+  {
+    type: "function",
+    name: "latestRoundData",
+    inputs: [],
+    outputs: [
+      { name: "roundId", type: "uint80", internalType: "uint80" },
+      { name: "answer", type: "int256", internalType: "int256" },
+      { name: "startedAt", type: "uint256", internalType: "uint256" },
+      { name: "updatedAt", type: "uint256", internalType: "uint256" },
+      { name: "answeredInRound", type: "uint80", internalType: "uint80" },
+    ],
+    stateMutability: "view",
+  },
+] as const;

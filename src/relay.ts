@@ -23,6 +23,7 @@ import {
 } from "viem/chains";
 
 import type { Logger } from "winston";
+import { chainlinkAggregatorAbi } from "./chainlink-aggregator-abi";
 import config from "./config";
 import {
   sendInvalidPriceNotification,
@@ -63,22 +64,6 @@ const sortedOraclesAbi = [
     name: "getTokenReportExpirySeconds",
     inputs: [{ name: "rateFeedId", type: "address" }],
     outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "view",
-  },
-] as const;
-
-const chainlinkAggregatorAbi = [
-  {
-    type: "function",
-    name: "latestRoundData",
-    inputs: [],
-    outputs: [
-      { name: "roundId", type: "uint80" },
-      { name: "answer", type: "int256" },
-      { name: "startedAt", type: "uint256" },
-      { name: "updatedAt", type: "uint256" },
-      { name: "answeredInRound", type: "uint80" },
-    ],
     stateMutability: "view",
   },
 ] as const;

@@ -96,6 +96,10 @@ Each environment hosts multiple cloud functions (one per chain), sharing the sam
    # To fetch secrets, you'll need the `Secret Manager Secret Accessor` IAM role assigned to your Google Cloud Account
    relayer_mnemonic      = "<relayer-mnemonic>"
 
+   # Testnet only: private key authorized to call MockAggregatorBatchReporter.batchReport.
+   # The same EOA is used for all supported testnet chains.
+   mock_aggregator_reporter_private_key = "<private-key>"
+
    # Discord webhook URL for testnet alerts
    discord_webhook_url_testnet      = "<testnet-webhook-url>"
 
