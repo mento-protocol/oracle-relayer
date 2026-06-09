@@ -193,7 +193,11 @@ export default async function relay(
   } catch (err) {
     if (!(err instanceof BaseError)) {
       // Theoretically should never happen, as all errors in Viem should extend BaseError
-      logger.error("Relay failed due to an unknown non-BaseError:", err);
+      logger.error(
+        redactRpcUrl(
+          `Relay failed due to an unknown non-BaseError: ${String(err)}`,
+        ),
+      );
       return false;
     }
 
@@ -372,7 +376,9 @@ async function handleContractFunctionRevertError(
     }
     default: {
       logger.error(
-        `Relay failed. Unknown error type: ${errName} - ${revertError.shortMessage}`,
+        redactRpcUrl(
+          `Relay failed. Unknown error type: ${errName} - ${revertError.shortMessage}`,
+        ),
       );
       break;
     }
@@ -571,7 +577,9 @@ async function handleNonRevertError(
       return await relay(relayerAddress, rateFeedName, logger, true);
     default:
       logger.error(
-        `Relay failed with an unknown non-revert error: ${err.shortMessage}`,
+        redactRpcUrl(
+          `Relay failed with an unknown non-revert error: ${err.shortMessage}`,
+        ),
       );
       logger.error(redactRpcUrl(JSON.stringify(err, null, 2)));
       return false;
