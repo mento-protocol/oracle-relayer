@@ -1,7 +1,7 @@
 {
   "celo-sepolia": {
     "EUR/USD": {
-      "mainnet": "0x9a48d9b0AF457eF040281A9Af3867bc65522Fecd",
+      "mainnet": "0x3D207061Dbe8E2473527611BFecB87Ff12b28dDa",
       "testnet": "0x6E55B9BE545adD377ebB7bcDa03cEb5819d650a6"
     },
     "BRL/USD": {
