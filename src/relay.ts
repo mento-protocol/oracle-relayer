@@ -59,6 +59,7 @@ const contractCodeCache = new Map<string, boolean>();
 // differing chain heights, whose lagging reads cause "nonce too low" rejections
 // and stale receipt/price reads.
 let cachedTransport: Transport | undefined;
+let dedicatedRpcUrl: string | undefined;
 
 async function initTransport(): Promise<void> {
   if (cachedTransport) {
@@ -76,10 +77,23 @@ async function initTransport(): Promise<void> {
         `RPC URL secret '${config.RPC_URL_SECRET_ID}' resolved to an empty value`,
       );
     }
+    dedicatedRpcUrl = rpcUrl;
     cachedTransport = fallback([http(rpcUrl), http()]);
   } else {
     cachedTransport = http();
   }
+}
+
+/**
+ * The dedicated RPC URL embeds an access token, and viem request errors carry
+ * the full request URL (as `url` and in `metaMessages`), so anything that
+ * serializes a viem error must pass through here to keep the token out of
+ * Cloud Logging.
+ */
+function redactRpcUrl(text: string): string {
+  return dedicatedRpcUrl
+    ? text.replaceAll(dedicatedRpcUrl, "<dedicated-rpc-url>")
+    : text;
 }
 
 function getTransport(): Transport {
@@ -348,7 +362,7 @@ async function handleContractFunctionRevertError(
     }
     case "InvalidPrice": {
       logger.error("Relay failed. Chainlink price is invalid");
-      logger.error(JSON.stringify(revertError, null, 2));
+      logger.error(redactRpcUrl(JSON.stringify(revertError, null, 2)));
       await sendInvalidPriceNotification(rateFeedName);
       break;
     }
@@ -516,7 +530,16 @@ async function handleNonRevertError(
   const isStaleNonce =
     nonceError instanceof NonceTooLowError &&
     /nonce too low/i.test(`${nonceError.details} ${err.details}`);
-  if (!isRetryAttempt && isStaleNonce) {
+  if (isStaleNonce) {
+    if (isRetryAttempt) {
+      // Don't fall through to the generic "unknown non-revert error" branch —
+      // we know exactly what happened, and operators grep for this case.
+      logger.error(
+        `Relay failed. Nonce was still stale after retrying with a fresh nonce for signer ${signerAddress}. Will not retry again.`,
+      );
+      return false;
+    }
+
     logger.info(
       `Relay failed with a stale nonce for signer ${signerAddress}, will retry once with a fresh nonce`,
     );
@@ -550,7 +573,7 @@ async function handleNonRevertError(
       logger.error(
         `Relay failed with an unknown non-revert error: ${err.shortMessage}`,
       );
-      logger.error(JSON.stringify(err, null, 2));
+      logger.error(redactRpcUrl(JSON.stringify(err, null, 2)));
       return false;
   }
 }

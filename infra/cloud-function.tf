@@ -34,8 +34,10 @@ resource "google_cloudfunctions2_function" "relay" {
         NODE_ENV         = each.value.is_production ? "production" : "development"
         CHAIN            = each.key
       },
-      # Only set when a dedicated RPC URL is configured for this chain (see secret-manager.tf)
-      each.value.rpc_url_secret_id != null ? { RPC_URL_SECRET_ID = each.value.rpc_url_secret_id } : {},
+      # Only set when a dedicated RPC URL is configured for this chain. References
+      # the secret resource (not the raw var) so Terraform orders the function
+      # after the secret on first apply, like the discord/mnemonic env vars.
+      each.value.rpc_url_secret_id != null ? { RPC_URL_SECRET_ID = one(google_secret_manager_secret.celo_rpc_url[*].secret_id) } : {},
     )
   }
 

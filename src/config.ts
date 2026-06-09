@@ -7,7 +7,7 @@ export interface Env {
   RELAYER_MNEMONIC_SECRET_ID: string;
   // Optional Secret Manager secret ID holding the primary RPC URL (e.g. a
   // dedicated QuickNode endpoint). When unset, the chain's default public RPC
-  // is used. See getOrCreate*Client in relay.ts.
+  // is used. See initTransport() in relay.ts.
   RPC_URL_SECRET_ID?: string;
   CHAIN:
     | "celo"
