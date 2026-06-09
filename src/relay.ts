@@ -64,14 +64,22 @@ async function initTransport(): Promise<void> {
   if (cachedTransport) {
     return;
   }
-  // Only cache on success: if the secret load throws, leave cachedTransport
-  // unset so the next invocation retries instead of pinning this warm instance
-  // to the default RPC. Treated as a hard dependency like the mnemonic secret —
-  // both fail the relay (and retry next minute) if Secret Manager is unreachable.
-  const rpcUrl = config.RPC_URL_SECRET_ID
-    ? (await getSecret(config.RPC_URL_SECRET_ID)).trim()
-    : undefined;
-  cachedTransport = rpcUrl ? fallback([http(rpcUrl), http()]) : http();
+  // Only cache on success: if the secret is missing/empty or the load throws,
+  // leave cachedTransport unset so the next invocation retries instead of
+  // pinning this warm instance to the default RPC. Treated as a hard dependency
+  // like the mnemonic secret — both fail the relay (and retry next minute) if
+  // Secret Manager is unreachable or misconfigured.
+  if (config.RPC_URL_SECRET_ID) {
+    const rpcUrl = (await getSecret(config.RPC_URL_SECRET_ID)).trim();
+    if (!rpcUrl) {
+      throw new Error(
+        `RPC URL secret '${config.RPC_URL_SECRET_ID}' resolved to an empty value`,
+      );
+    }
+    cachedTransport = fallback([http(rpcUrl), http()]);
+  } else {
+    cachedTransport = http();
+  }
 }
 
 function getTransport(): Transport {
