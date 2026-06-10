@@ -26,9 +26,9 @@ resource "google_cloudfunctions2_function" "relay" {
 
     environment_variables = merge(
       {
-        GCP_PROJECT_ID                = module.oracle_relayer.project_id
-        DISCORD_WEBHOOK_URL_SECRET_ID = google_secret_manager_secret.discord_webhook_url.secret_id
-        RELAYER_MNEMONIC_SECRET_ID    = google_secret_manager_secret.relayer_mnemonic.secret_id
+        GCP_PROJECT_ID              = module.oracle_relayer.project_id
+        SLACK_WEBHOOK_URL_SECRET_ID = google_secret_manager_secret.slack_webhook_url.secret_id
+        RELAYER_MNEMONIC_SECRET_ID  = google_secret_manager_secret.relayer_mnemonic.secret_id
         # Logs execution ID for easier debugging => https://cloud.google.com/functions/docs/monitoring/logging#viewing_runtime_logs
         LOG_EXECUTION_ID = "true"
         NODE_ENV         = each.value.is_production ? "production" : "development"
@@ -41,7 +41,7 @@ resource "google_cloudfunctions2_function" "relay" {
       },
       # Only set when a dedicated RPC URL is configured for this chain. References
       # the secret resource (not the raw var) so Terraform orders the function
-      # after the secret on first apply, like the discord/mnemonic env vars.
+      # after the secret on first apply, like the slack/mnemonic env vars.
       each.value.rpc_url_secret_id != null ? { RPC_URL_SECRET_ID = one(google_secret_manager_secret.celo_rpc_url[*].secret_id) } : {},
     )
   }
@@ -92,7 +92,7 @@ resource "google_cloudfunctions2_function" "mock_aggregator_updater" {
 
     environment_variables = {
       GCP_PROJECT_ID                                 = module.oracle_relayer.project_id
-      DISCORD_WEBHOOK_URL_SECRET_ID                  = google_secret_manager_secret.discord_webhook_url.secret_id
+      SLACK_WEBHOOK_URL_SECRET_ID                    = google_secret_manager_secret.slack_webhook_url.secret_id
       RELAYER_MNEMONIC_SECRET_ID                     = google_secret_manager_secret.relayer_mnemonic.secret_id
       MOCK_AGGREGATOR_REPORTER_PRIVATE_KEY_SECRET_ID = google_secret_manager_secret.mock_aggregator_reporter_private_key[0].secret_id
       LOG_EXECUTION_ID                               = "true"

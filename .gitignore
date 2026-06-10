@@ -22,3 +22,4 @@ pnpm-lock.yaml
 # Ignore .claude except shared project settings (SessionStart hook for worktree setup)
 .claude/*
 !.claude/settings.json
+.reviews/
