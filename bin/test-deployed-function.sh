@@ -47,7 +47,7 @@ test_deployed_function() {
 
 	echo "🌀 Emitting a Pubsub event to trigger the function..."
 	printf "\n"
-	gcloud pubsub topics publish "${topic_name}" --message="{\"rate_feed_name\": \"${rate_feed_id}\", \"relayer_address\": \"${address}\"}"
+	gcloud pubsub topics publish "${topic_name}" --project "${project_id}" --message="{\"rate_feed_name\": \"${rate_feed_id}\", \"relayer_address\": \"${address}\"}"
 	printf "\n"
 
 	echo "✅ Pubsub event emitted!"
