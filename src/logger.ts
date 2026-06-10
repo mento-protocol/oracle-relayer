@@ -9,7 +9,9 @@ export default function getLogger(
   const isCloudFunction = process.env.FUNCTION_TARGET !== undefined;
   const functionName = process.env.K_SERVICE; // Cloud Run service name (same as function name in Gen 2)
   const revision = process.env.K_REVISION; // Cloud Run revision
-  const location = process.env.FUNCTION_REGION; // Region where function is deployed
+  // Region where the function is deployed. Gen2 doesn't set gen1's
+  // FUNCTION_REGION automatically; terraform injects it (cloud-function.tf).
+  const location = process.env.FUNCTION_REGION;
 
   const addTraceId = winston.format((info) => {
     info["logging.googleapis.com/trace"] =

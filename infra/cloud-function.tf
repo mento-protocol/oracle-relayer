@@ -33,6 +33,11 @@ resource "google_cloudfunctions2_function" "relay" {
         LOG_EXECUTION_ID = "true"
         NODE_ENV         = each.value.is_production ? "production" : "development"
         CHAIN            = each.key
+        # Gen2 functions don't set gen1's FUNCTION_REGION, so we inject it —
+        # logger.ts uses it to stamp resource.labels.location on log entries
+        # (otherwise they're written with location="unknown" and region-scoped
+        # Logs Explorer queries miss them).
+        FUNCTION_REGION = var.region
       },
       # Only set when a dedicated RPC URL is configured for this chain. References
       # the secret resource (not the raw var) so Terraform orders the function
