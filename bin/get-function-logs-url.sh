@@ -53,7 +53,7 @@ EOF
 
 	echo ""
 
-	cloud_run_logs_url="https://console.cloud.google.com/run/detail/${region}/${function_name}/logs?project=${project_id}"
+	cloud_run_logs_url="https://console.cloud.google.com/run/detail/${region}/${function_name}/observability/logs?project=${project_id}"
 	printf '\n\033[1mCloud Run Logs\033[0m - The underlying Cloud Run logs, mainly for problems occurring during startup of the function.\n%s\n' "${cloud_run_logs_url}"
 }
 
