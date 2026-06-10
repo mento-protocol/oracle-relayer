@@ -54,7 +54,7 @@ validate_rate_feed_description() {
 
 check_if_job_exists() {
 	# Check if the scheduler job exists
-	if ! gcloud scheduler jobs describe "${1}" --location "${region}" &>/dev/null; then
+	if ! gcloud scheduler jobs describe "${1}" --project "${project_id}" --location "${region}" &>/dev/null; then
 		printf "\n"
 		echo "❌ Error: Scheduler job '${1}' does not exist in Google Cloud." >&2
 		exit 1
@@ -70,6 +70,7 @@ printf "\n"
 start_spinner "Fetching job logs..."
 
 gcloud logging read "resource.type=cloud_scheduler_job AND resource.labels.job_id=${scheduler_job_id}" \
+	--project "${project_id}" \
 	--limit=20 \
 	--format="table(timestamp,insertId,jsonPayload.pubsubTopic)"
 
