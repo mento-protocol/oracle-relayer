@@ -28,18 +28,21 @@ resource "google_secret_manager_secret_version" "mock_aggregator_reporter_privat
   secret_data = var.mock_aggregator_reporter_private_key
 }
 
-resource "google_secret_manager_secret" "discord_webhook_url" {
+# Slack incoming-webhook URL for #alerts-oracles. One channel serves both
+# environments and all chains — the relayer prefixes messages with
+# [chain][feed]. Consumed by the cloud functions via SLACK_WEBHOOK_URL_SECRET_ID.
+resource "google_secret_manager_secret" "slack_webhook_url" {
   project   = module.oracle_relayer.project_id
-  secret_id = "${var.discord_webhook_url_secret_id}-${terraform.workspace}"
+  secret_id = var.slack_webhook_url_secret_id
 
   replication {
     auto {}
   }
 }
 
-resource "google_secret_manager_secret_version" "discord_webhook_url" {
-  secret      = google_secret_manager_secret.discord_webhook_url.id
-  secret_data = local.discord_webhook_url
+resource "google_secret_manager_secret_version" "slack_webhook_url" {
+  secret      = google_secret_manager_secret.slack_webhook_url.id
+  secret_data = var.slack_webhook_url
 }
 
 # Dedicated Celo mainnet RPC URL (e.g. a QuickNode HTTPS endpoint). Optional:

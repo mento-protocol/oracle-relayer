@@ -29,8 +29,6 @@ locals {
     for chain in local.mock_aggregator_updater_chains : chain => local.chain_configs[chain]
   }
 
-  discord_webhook_url = terraform.workspace == "mainnet" ? var.discord_webhook_url_mainnet : var.discord_webhook_url_testnet
-
   # Flattened scheduler jobs: "chain/rate_feed" => {chain, key, address}
   all_scheduler_jobs = merge([
     for chain, config in local.chain_configs : {

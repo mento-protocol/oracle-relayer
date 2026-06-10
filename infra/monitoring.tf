@@ -29,17 +29,6 @@ resource "google_logging_metric" "successful_relay_count" {
   }
 }
 
-# Discord notification channel for info-only alerts
-resource "google_monitoring_notification_channel" "discord_channel" {
-  project      = module.oracle_relayer.project_id
-  display_name = "Discord #${terraform.workspace}-oracle-relayers"
-  type         = "webhook_tokenauth"
-
-  labels = {
-    url = local.discord_webhook_url
-  }
-}
-
 # Splunk notification channel for on-call alerts
 resource "google_monitoring_notification_channel" "victorops_channel" {
   project      = module.oracle_relayer.project_id

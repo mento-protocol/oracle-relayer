@@ -31,7 +31,7 @@ import config from "./config";
 import {
   sendInvalidPriceNotification,
   sendTxStuckNotification,
-} from "./discord-notification";
+} from "./slack-notification";
 import getSecret from "./get-secret";
 import { relayerAbi } from "./relayer-abi";
 import { deriveRelayerAccount } from "./utils";

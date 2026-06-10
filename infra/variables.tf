@@ -65,19 +65,15 @@ variable "victorops_webhook_url" {
 
 # You can look this up via:
 #  `gcloud secrets list`
-variable "discord_webhook_url_secret_id" {
+variable "slack_webhook_url_secret_id" {
   type    = string
-  default = "discord-webhook-url"
+  default = "slack-webhook-url"
 }
 
-# Discord webhook URL for testnet alerts
-variable "discord_webhook_url_testnet" {
-  type      = string
-  sensitive = true
-}
-
-# Discord webhook URL for mainnet alerts
-variable "discord_webhook_url_mainnet" {
+# Slack incoming-webhook URL for the #alerts-oracles channel.
+# Used by the relayer for app-level alerts (invalid price, stuck tx) on all
+# chains and in both environments — messages are prefixed with [chain][feed].
+variable "slack_webhook_url" {
   type      = string
   sensitive = true
 }
