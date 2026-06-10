@@ -54,7 +54,12 @@ resource "google_monitoring_notification_channel" "victorops_channel" {
 # Creates an alert policy per chain that triggers when no successful relay logs have been received in the last 30 minutes,
 # and sends a notification to Splunk.
 resource "google_monitoring_alert_policy" "successful_relay_policy" {
-  for_each     = local.chain_configs
+  # Mainnet only: testnet relays once a day (see scheduler.tf), so a 30-minute
+  # absence window would page nearly continuously there — and a daily cadence
+  # can't support log-absence alerting at all (a healthy run that skips on
+  # TimestampNotNew emits no success log either). The metric itself stays in
+  # both workspaces for dashboards.
+  for_each     = terraform.workspace == "mainnet" ? local.chain_configs : {}
   project      = module.oracle_relayer.project_id
   display_name = "no-successful-relay-logs-${each.key}"
   combiner     = "OR" # Not used in practice because we only have one condition, but it's required by the API
