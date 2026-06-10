@@ -157,7 +157,7 @@ Worktrees created via `claude --worktree` are self-bootstrapping — no manual s
 - [`.worktreeinclude`](.worktreeinclude) copies the gitignored `.env`, `.project_vars_cache`, and `infra/.terraform/environment` (terraform workspace marker) from the main checkout into every new worktree.
 - A `SessionStart` hook in [`.claude/settings.json`](.claude/settings.json) runs `npm ci` once when `node_modules` is missing.
 
-Note: the copied cache pins the worktree to whatever environment the main checkout had selected. `bin/get-project-vars.sh` fails loudly on a chain↔environment mismatch; fix with `npm run testnet` / `npm run mainnet`.
+Note: the copied cache pins the worktree to whatever environment the main checkout had selected. `bin/get-project-vars.sh` fails loudly on a chain↔environment mismatch. To switch environments, run `./bin/set-up-terraform.sh` first (fresh worktrees only carry the workspace marker, not an initialized terraform backend, so `terraform workspace select` would fail), then `npm run testnet` / `npm run mainnet`.
 
 ## Switching between environments
 
