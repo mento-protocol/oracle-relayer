@@ -10,10 +10,18 @@ locals {
 
   mock_aggregator_updater_chains = terraform.workspace == "testnet" ? ["celo-sepolia", "monad-testnet", "polygon-testnet"] : []
 
+  # Whether a dedicated RPC URL is configured. nonsensitive() is safe here: it
+  # exposes only whether the URL is empty (a presence flag), never the URL
+  # itself — and is required because count/for_each reject sensitive-derived
+  # values (chain_configs feeds for_each in cloud-function/scheduler/pubsub).
+  celo_rpc_url_enabled = nonsensitive(var.celo_rpc_url != "")
+
   chain_configs = {
     for chain in local.chains : chain => {
       relayer_addresses = local.relayer_addresses[chain]
       is_production     = terraform.workspace == "mainnet"
+      # Only celo (mainnet) uses a dedicated RPC URL for now; null => default public RPC
+      rpc_url_secret_id = (chain == "celo" && local.celo_rpc_url_enabled) ? var.rpc_url_secret_id : null
     }
   }
 

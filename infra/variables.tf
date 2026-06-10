@@ -40,6 +40,21 @@ variable "mock_aggregator_reporter_private_key" {
   default   = ""
 }
 
+# Optional dedicated RPC URL for Celo mainnet (e.g. a QuickNode HTTPS endpoint).
+# When set, the relayer uses it as the primary RPC and falls back to the chain's
+# default public RPC (Forno). Leave empty to use only the default public RPC.
+# The default public RPCs are load-balanced across nodes at differing chain
+# heights, whose lagging reads cause "nonce too low" rejections.
+variable "celo_rpc_url" {
+  type      = string
+  sensitive = true
+  default   = ""
+}
+
+variable "rpc_url_secret_id" {
+  type    = string
+  default = "celo-rpc-url"
+}
 # Webhook URL to send monitoring alerts from within GCP Monitoring
 # You can find this URL in Victorops by going to "Integrations" -> "Stackdriver".
 # The routing key can be found under "Settings" -> "Routing Keys"

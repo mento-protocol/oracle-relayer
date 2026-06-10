@@ -3,6 +3,7 @@ import type {
   Chain,
   GetContractReturnType,
   PublicClient,
+  Transport,
   WalletClient,
 } from "viem";
 import {
@@ -11,8 +12,10 @@ import {
   createPublicClient,
   createWalletClient,
   encodeFunctionData,
+  fallback,
   getContract,
   http,
+  NonceTooLowError,
 } from "viem";
 import {
   celo,
@@ -48,6 +51,56 @@ const walletClients: Map<string, WalletClient> = new Map<
   WalletClient
 >();
 const contractCodeCache = new Map<string, boolean>();
+
+// Shared transport, initialized once per instance via initTransport(). When an
+// RPC URL secret is configured we prefer it (a dedicated endpoint with
+// consistent state) and fall back to the chain's default public RPC. The
+// default public RPCs (e.g. Celo's Forno) are load-balanced across nodes at
+// differing chain heights, whose lagging reads cause "nonce too low" rejections
+// and stale receipt/price reads.
+let cachedTransport: Transport | undefined;
+let dedicatedRpcUrl: string | undefined;
+
+async function initTransport(): Promise<void> {
+  if (cachedTransport) {
+    return;
+  }
+  // Only cache on success: if the secret is missing/empty or the load throws,
+  // leave cachedTransport unset so the next invocation retries instead of
+  // pinning this warm instance to the default RPC. Treated as a hard dependency
+  // like the mnemonic secret — both fail the relay (and retry next minute) if
+  // Secret Manager is unreachable or misconfigured.
+  if (config.RPC_URL_SECRET_ID) {
+    const rpcUrl = (await getSecret(config.RPC_URL_SECRET_ID)).trim();
+    if (!rpcUrl) {
+      throw new Error(
+        `RPC URL secret '${config.RPC_URL_SECRET_ID}' resolved to an empty value`,
+      );
+    }
+    dedicatedRpcUrl = rpcUrl;
+    cachedTransport = fallback([http(rpcUrl), http()]);
+  } else {
+    cachedTransport = http();
+  }
+}
+
+/**
+ * The dedicated RPC URL embeds an access token, and viem request errors carry
+ * the full request URL (as `url` and in `metaMessages`), so anything that
+ * serializes a viem error must pass through here to keep the token out of
+ * Cloud Logging.
+ */
+function redactRpcUrl(text: string): string {
+  return dedicatedRpcUrl
+    ? text.replaceAll(dedicatedRpcUrl, "<dedicated-rpc-url>")
+    : text;
+}
+
+function getTransport(): Transport {
+  // initTransport() runs at the top of relay() before any client is created
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  return cachedTransport!;
+}
 
 type RelayerContract = GetContractReturnType<typeof relayerAbi, PublicClient>;
 
@@ -111,44 +164,61 @@ export default async function relay(
 ): Promise<boolean> {
   logger.info(`Relay request received for ${relayerAddress}`);
 
-  if (!(await isContract(relayerAddress))) {
-    logger.error(
-      `Relay failed. Relayer address ${relayerAddress} is not a contract.`,
-    );
-    return false;
-  }
-
-  const publicClient = getOrCreatePublicClient();
-  const wallet = await getOrCreateWalletClient(rateFeedName);
-
-  const contract: RelayerContract = getContract({
-    address: relayerAddress as Address,
-    abi: relayerAbi,
-    client: { public: publicClient, wallet },
-  });
+  // Declared outside the try so the catch can use whatever was already
+  // initialized. The try covers every RPC-touching step (not just submitTx):
+  // a viem error thrown e.g. by isContract's getCode would otherwise escape to
+  // the Functions runtime unredacted and leak the dedicated RPC URL into logs.
+  let client: PublicClient | undefined;
+  let contract: RelayerContract | undefined;
+  let signerAddress = "<undefined>";
 
   try {
-    return await submitTx(
-      contract,
-      publicClient,
-      wallet,
-      isRetryAttempt,
-      logger,
-    );
+    await initTransport();
+
+    if (!(await isContract(relayerAddress))) {
+      logger.error(
+        `Relay failed. Relayer address ${relayerAddress} is not a contract.`,
+      );
+      return false;
+    }
+
+    client = getOrCreatePublicClient();
+    const wallet = await getOrCreateWalletClient(rateFeedName);
+    signerAddress =
+      (wallet.account?.address as string | undefined) ?? "<undefined>";
+
+    contract = getContract({
+      address: relayerAddress as Address,
+      abi: relayerAbi,
+      client: { public: client, wallet },
+    });
+
+    return await submitTx(contract, client, wallet, isRetryAttempt, logger);
   } catch (err) {
     if (!(err instanceof BaseError)) {
       // Theoretically should never happen, as all errors in Viem should extend BaseError
-      logger.error("Relay failed due to an unknown non-BaseError:", err);
+      logger.error(
+        redactRpcUrl(
+          `Relay failed due to an unknown non-BaseError: ${String(err)}`,
+        ),
+      );
       return false;
     }
 
     const revertError = err.walk(
       (err) => err instanceof ContractFunctionRevertedError,
     );
-    if (revertError instanceof ContractFunctionRevertedError) {
+    // A revert can only originate from simulate/write on the contract, so
+    // contract/client are always initialized on this path — the guard just
+    // satisfies the type system.
+    if (
+      revertError instanceof ContractFunctionRevertedError &&
+      contract &&
+      client
+    ) {
       await handleContractFunctionRevertError(
         contract,
-        publicClient,
+        client,
         rateFeedName,
         revertError,
         logger,
@@ -159,8 +229,6 @@ export default async function relay(
     // At this point we know that the error is not a revert from the contract, so it could be an error
     // from the rpc client, i.e. not enough balance, incorrect nonce, tx broadcast timeout, etc,. in
     // which case the shortMessage should be descriptive enough
-    const signerAddress =
-      (wallet.account?.address as string | undefined) ?? "<undefined>";
     return await handleNonRevertError(
       relayerAddress,
       rateFeedName,
@@ -181,7 +249,7 @@ function getOrCreatePublicClient(): PublicClient {
   if (!publicClient) {
     publicClient = createPublicClient({
       chain: chainMap[config.CHAIN],
-      transport: http(),
+      transport: getTransport(),
       // NOTE: viem's typescript support is super annoying, couldn't figure out how to make this work without the cast
     }) as unknown as PublicClient;
   }
@@ -199,7 +267,7 @@ async function getOrCreateWalletClient(
     const newWalletClient = createWalletClient({
       account: deriveRelayerAccount(mnemonic, rateFeedName),
       chain: chainMap[config.CHAIN],
-      transport: http(),
+      transport: getTransport(),
     });
     walletClients.set(rateFeedName, newWalletClient);
   }
@@ -307,7 +375,7 @@ async function handleContractFunctionRevertError(
     }
     case "InvalidPrice": {
       logger.error("Relay failed. Chainlink price is invalid");
-      logger.error(JSON.stringify(revertError, null, 2));
+      logger.error(redactRpcUrl(JSON.stringify(revertError, null, 2)));
       await sendInvalidPriceNotification(rateFeedName);
       break;
     }
@@ -317,7 +385,9 @@ async function handleContractFunctionRevertError(
     }
     default: {
       logger.error(
-        `Relay failed. Unknown error type: ${errName} - ${revertError.shortMessage}`,
+        redactRpcUrl(
+          `Relay failed. Unknown error type: ${errName} - ${revertError.shortMessage}`,
+        ),
       );
       break;
     }
@@ -463,6 +533,34 @@ async function handleNonRevertError(
   err: BaseError,
   logger: Logger,
 ): Promise<boolean> {
+  // A stale nonce read — e.g. from a lagging public RPC node that hasn't yet
+  // seen our previous tx — makes the sequencer reject the tx as "nonce too low".
+  // The tx never broadcasts, so it's safe to re-fetch the nonce and submit once
+  // more (the retry re-reads getTransactionCount from the configured RPC).
+  // viem's NonceTooLowError also covers "already known" / "transaction already
+  // imported", which instead mean the tx is already in the mempool — retrying
+  // those with a fresh nonce would broadcast a duplicate relay, so match the
+  // strict "nonce too low" message rather than the error class alone.
+  const nonceError = err.walk((e) => e instanceof NonceTooLowError);
+  const isStaleNonce =
+    nonceError instanceof NonceTooLowError &&
+    /nonce too low/i.test(`${nonceError.details} ${err.details}`);
+  if (isStaleNonce) {
+    if (isRetryAttempt) {
+      // Don't fall through to the generic "unknown non-revert error" branch —
+      // we know exactly what happened, and operators grep for this case.
+      logger.error(
+        `Relay failed. Nonce was still stale after retrying with a fresh nonce for signer ${signerAddress}. Will not retry again.`,
+      );
+      return false;
+    }
+
+    logger.info(
+      `Relay failed with a stale nonce for signer ${signerAddress}, will retry once with a fresh nonce`,
+    );
+    return await relay(relayerAddress, rateFeedName, logger, true);
+  }
+
   switch (err.details) {
     case "insufficient funds for transfer":
       logger.error(
@@ -488,9 +586,11 @@ async function handleNonRevertError(
       return await relay(relayerAddress, rateFeedName, logger, true);
     default:
       logger.error(
-        `Relay failed with an unknown non-revert error: ${err.shortMessage}`,
+        redactRpcUrl(
+          `Relay failed with an unknown non-revert error: ${err.shortMessage}`,
+        ),
       );
-      logger.error(JSON.stringify(err, null, 2));
+      logger.error(redactRpcUrl(JSON.stringify(err, null, 2)));
       return false;
   }
 }

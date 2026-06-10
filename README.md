@@ -109,6 +109,11 @@ Each environment hosts multiple cloud functions (one per chain), sharing the sam
    # Get it from our VictorOps by going to `Integrations` > `Stackdriver` and copying the URL. The routing key can be found under the settings tab
    victorops_webhook_url   = "<victorops-webhook-url>/<victorops-routing-key>"
 
+   # Optional (mainnet only): dedicated Celo RPC URL (e.g. a QuickNode HTTPS endpoint).
+   # When set, the relayer uses it as the primary RPC and falls back to the public
+   # Forno RPC. Leave unset to use only the public RPC. Stored in Secret Manager.
+   # celo_rpc_url = "<quicknode-celo-mainnet-https-url>"
+
    ```
 
 1. Verify that everything works

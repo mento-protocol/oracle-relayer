@@ -5,6 +5,10 @@ export interface Env {
   GCP_PROJECT_ID: string;
   NODE_ENV: string;
   RELAYER_MNEMONIC_SECRET_ID: string;
+  // Optional Secret Manager secret ID holding the primary RPC URL (e.g. a
+  // dedicated QuickNode endpoint). When unset, the chain's default public RPC
+  // is used. See initTransport() in relay.ts.
+  RPC_URL_SECRET_ID?: string;
   CHAIN:
     | "celo"
     | "celo-sepolia"
@@ -27,6 +31,7 @@ const schema: JSONSchemaType<Env> = {
     GCP_PROJECT_ID: { type: "string" },
     NODE_ENV: { type: "string" },
     RELAYER_MNEMONIC_SECRET_ID: { type: "string" },
+    RPC_URL_SECRET_ID: { type: "string", nullable: true },
     CHAIN: {
       type: "string",
       enum: [
