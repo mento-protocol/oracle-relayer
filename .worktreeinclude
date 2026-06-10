@@ -3,3 +3,5 @@
 # terraform workspace selected and no cached project vars.
 .project_vars_cache
 infra/.terraform/environment
+# Needed by `npm start` and the is-local-function-working pre-push hook.
+.env
