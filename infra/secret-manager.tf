@@ -28,21 +28,21 @@ resource "google_secret_manager_secret_version" "mock_aggregator_reporter_privat
   secret_data = var.mock_aggregator_reporter_private_key
 }
 
-# Slack incoming-webhook URL for #alerts-oracles. One channel serves both
-# environments and all chains — the relayer prefixes messages with
-# [chain][feed]. Consumed by the cloud functions via SLACK_WEBHOOK_URL_SECRET_ID.
-resource "google_secret_manager_secret" "slack_webhook_url" {
+# Slack bot token used for app-level alert messages (chat.postMessage to
+# #alerts-oracles / #alerts-testnet — see local.slack_channel in main.tf).
+# Consumed by the cloud functions via SLACK_BOT_TOKEN_SECRET_ID.
+resource "google_secret_manager_secret" "slack_bot_token" {
   project   = module.oracle_relayer.project_id
-  secret_id = var.slack_webhook_url_secret_id
+  secret_id = var.slack_bot_token_secret_id
 
   replication {
     auto {}
   }
 }
 
-resource "google_secret_manager_secret_version" "slack_webhook_url" {
-  secret      = google_secret_manager_secret.slack_webhook_url.id
-  secret_data = var.slack_webhook_url
+resource "google_secret_manager_secret_version" "slack_bot_token" {
+  secret      = google_secret_manager_secret.slack_bot_token.id
+  secret_data = var.slack_bot_token
 }
 
 # Dedicated Celo mainnet RPC URL (e.g. a QuickNode HTTPS endpoint). Optional:

@@ -100,9 +100,11 @@ Each environment hosts multiple cloud functions (one per chain), sharing the sam
    # The same EOA is used for all supported testnet chains.
    mock_aggregator_reporter_private_key = "<private-key>"
 
-   # Slack incoming-webhook URL for the #alerts-oracles channel (one channel
-   # for both environments; the relayer prefixes messages with [chain][feed])
-   slack_webhook_url      = "<slack-webhook-url>"
+   # Bot User OAuth Token (xoxb-...) of the shared Mento alerts Slack app
+   # (same app as the monitoring monorepo's Grafana contact points; needs
+   # chat:write + chat:write.public). Alerts post to #alerts-oracles (mainnet)
+   # / #alerts-testnet (testnet), prefixed with [chain][feed].
+   slack_bot_token      = "<slack-bot-token>"
 
    # Get it from our VictorOps by going to `Integrations` > `Stackdriver` and copying the URL. The routing key can be found under the settings tab
    victorops_webhook_url   = "<victorops-webhook-url>/<victorops-routing-key>"

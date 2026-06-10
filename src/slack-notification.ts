@@ -2,20 +2,29 @@ import config from "./config";
 import getSecret from "./get-secret.js";
 
 /**
- * Posts a message to the #alerts-oracles Slack channel via an incoming
- * webhook (replaces the former per-environment Discord webhooks).
+ * Posts a message to Slack via `chat.postMessage`, authenticated with the
+ * shared Mento alerts bot token (the same Slack app the monitoring
+ * monorepo's Grafana contact points use). The bot's `chat:write.public`
+ * scope lets it post to public channels by name without being a member.
+ *
+ * Note: the Slack Web API signals failure with HTTP 200 + `ok: false`,
+ * so the response body must be checked, not just the HTTP status.
  */
 async function sendSlackNotification(text: string) {
-  const webhookUrl = await getSecret(config.SLACK_WEBHOOK_URL_SECRET_ID);
-  const response = await fetch(webhookUrl, {
+  const botToken = await getSecret(config.SLACK_BOT_TOKEN_SECRET_ID);
+  const response = await fetch("https://slack.com/api/chat.postMessage", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text }),
+    headers: {
+      Authorization: `Bearer ${botToken}`,
+      "Content-Type": "application/json; charset=utf-8",
+    },
+    body: JSON.stringify({ channel: config.SLACK_CHANNEL, text }),
   });
 
-  if (!response.ok) {
+  const body = (await response.json()) as { ok?: boolean; error?: string };
+  if (!response.ok || body.ok !== true) {
     throw new Error(
-      `Slack webhook responded with ${String(response.status)}: ${await response.text()}`,
+      `Slack chat.postMessage failed with status ${String(response.status)}: ${body.error ?? "unknown"}`,
     );
   }
 }
