@@ -1,0 +1,7 @@
+# Files copied into new Claude Code worktrees (gitignore syntax; only gitignored files are copied).
+# Without these, bin/get-project-vars.sh fails because fresh worktrees have no
+# terraform workspace selected and no cached project vars.
+.project_vars_cache
+infra/.terraform/environment
+# Needed by `npm start` and the is-local-function-working pre-push hook.
+.env
