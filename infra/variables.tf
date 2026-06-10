@@ -65,17 +65,24 @@ variable "victorops_webhook_url" {
 
 # You can look this up via:
 #  `gcloud secrets list`
-variable "slack_webhook_url_secret_id" {
+variable "slack_bot_token_secret_id" {
   type    = string
-  default = "slack-webhook-url"
+  default = "slack-bot-token"
 }
 
-# Slack incoming-webhook URL for the #alerts-oracles channel.
-# Used by the relayer for app-level alerts (invalid price, stuck tx) on all
-# chains and in both environments — messages are prefixed with [chain][feed].
-variable "slack_webhook_url" {
+# Bot User OAuth Token (xoxb-...) of the shared Mento alerts Slack app (the
+# same app the monitoring monorepo's Grafana contact points use). Needs the
+# chat:write + chat:write.public scopes. Used by the relayer for app-level
+# alerts (invalid price, stuck tx) — messages are prefixed with [chain][feed]
+# and post to #alerts-oracles (mainnet) / #alerts-testnet (testnet).
+variable "slack_bot_token" {
   type      = string
   sensitive = true
+
+  validation {
+    condition     = startswith(var.slack_bot_token, "xoxb-")
+    error_message = "The slack_bot_token value must be a Slack bot OAuth token starting with 'xoxb-'."
+  }
 }
 
 # Chain to use for local development .env file generation

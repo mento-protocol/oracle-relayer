@@ -16,6 +16,10 @@ locals {
   # values (chain_configs feeds for_each in cloud-function/scheduler/pubsub).
   celo_rpc_url_enabled = nonsensitive(var.celo_rpc_url != "")
 
+  # Slack channel for app-level alerts, mirroring the monitoring monorepo's
+  # routing convention (prod → #alerts-oracles, everything else → #alerts-testnet).
+  slack_channel = terraform.workspace == "mainnet" ? "#alerts-oracles" : "#alerts-testnet"
+
   chain_configs = {
     for chain in local.chains : chain => {
       relayer_addresses = local.relayer_addresses[chain]

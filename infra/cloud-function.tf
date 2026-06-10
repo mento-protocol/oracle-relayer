@@ -26,9 +26,10 @@ resource "google_cloudfunctions2_function" "relay" {
 
     environment_variables = merge(
       {
-        GCP_PROJECT_ID              = module.oracle_relayer.project_id
-        SLACK_WEBHOOK_URL_SECRET_ID = google_secret_manager_secret.slack_webhook_url.secret_id
-        RELAYER_MNEMONIC_SECRET_ID  = google_secret_manager_secret.relayer_mnemonic.secret_id
+        GCP_PROJECT_ID             = module.oracle_relayer.project_id
+        SLACK_BOT_TOKEN_SECRET_ID  = google_secret_manager_secret.slack_bot_token.secret_id
+        SLACK_CHANNEL              = local.slack_channel
+        RELAYER_MNEMONIC_SECRET_ID = google_secret_manager_secret.relayer_mnemonic.secret_id
         # Logs execution ID for easier debugging => https://cloud.google.com/functions/docs/monitoring/logging#viewing_runtime_logs
         LOG_EXECUTION_ID = "true"
         NODE_ENV         = each.value.is_production ? "production" : "development"
@@ -92,7 +93,8 @@ resource "google_cloudfunctions2_function" "mock_aggregator_updater" {
 
     environment_variables = {
       GCP_PROJECT_ID                                 = module.oracle_relayer.project_id
-      SLACK_WEBHOOK_URL_SECRET_ID                    = google_secret_manager_secret.slack_webhook_url.secret_id
+      SLACK_BOT_TOKEN_SECRET_ID                      = google_secret_manager_secret.slack_bot_token.secret_id
+      SLACK_CHANNEL                                  = local.slack_channel
       RELAYER_MNEMONIC_SECRET_ID                     = google_secret_manager_secret.relayer_mnemonic.secret_id
       MOCK_AGGREGATOR_REPORTER_PRIVATE_KEY_SECRET_ID = google_secret_manager_secret.mock_aggregator_reporter_private_key[0].secret_id
       LOG_EXECUTION_ID                               = "true"
