@@ -4,10 +4,14 @@ resource "google_logging_metric" "successful_relay_count" {
   project     = module.oracle_relayer.project_id
   name        = "successful_relay_count_${each.key}"
   description = "Number of log entries containing 'Relay succeeded' in the ${each.key} relay cloud function"
-  filter      = <<EOF
+  # NOTE: the relayer logs through the Cloud Logging API (winston) with a
+  # cloud_run_revision resource — gen2 functions never emit the gen1
+  # cloud_function/function_name labels, so filtering on those matches nothing.
+  filter = <<EOF
     severity>=DEFAULT
     SEARCH("`Relay succeeded`")
-    resource.labels.function_name="relay-${each.key}"
+    resource.type="cloud_run_revision"
+    resource.labels.service_name="relay-${each.key}"
   EOF
 
   metric_descriptor {
@@ -57,26 +61,30 @@ resource "google_monitoring_alert_policy" "successful_relay_policy" {
   enabled      = true
 
   documentation {
-    content = "No successful relay events for $${metric.label.ratefeed} on ${each.key} in the past 30 minutes"
+    content = "No successful relay events on ${each.key} in the past 30 minutes — the relay function has likely stopped relaying entirely. Per-feed staleness is covered by the Grafana oracle-liveness alerts."
   }
 
   conditions {
     display_name = "No successful relay logs for ${each.key} in 30 minutes"
 
-    condition_threshold {
+    # condition_absent instead of a LT-threshold: a log-based DELTA metric emits
+    # NO points at all when nothing matches, and a threshold condition does not
+    # evaluate on missing data — i.e. the exact scenario this alert exists for
+    # (relays stopped entirely) would never page. Absence is the canonical
+    # "no logs in X minutes" shape. Scoped per chain (REDUCE_SUM across feeds);
+    # per-feed staleness is the Grafana oracle-liveness alerts' job.
+    condition_absent {
       filter = <<EOF
-        resource.type = "cloud_function" AND
+        resource.type = "cloud_run_revision" AND
         metric.type   = "logging.googleapis.com/user/${google_logging_metric.successful_relay_count[each.key].name}"
       EOF
 
-      duration        = "300s" # Re-test the condition every 5 minutes
-      comparison      = "COMPARISON_LT"
-      threshold_value = 1
+      duration = "1800s" # 30 minutes without a single successful relay on this chain
 
       aggregations {
-        alignment_period     = "1800s" # 30 minutes
+        alignment_period     = "300s"
         per_series_aligner   = "ALIGN_COUNT"
-        cross_series_reducer = "REDUCE_NONE"
+        cross_series_reducer = "REDUCE_SUM"
       }
 
       trigger {
