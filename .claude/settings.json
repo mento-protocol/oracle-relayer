@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f package.json ] && [ ! -d node_modules ]; then echo 'node_modules missing (fresh worktree?) — running npm ci...' && npm ci --silent && echo 'npm ci done.'; fi",
+            "timeout": 600
+          }
+        ]
+      }
+    ]
+  }
+}
