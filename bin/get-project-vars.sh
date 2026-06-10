@@ -174,6 +174,17 @@ set_chain_vars() {
 		exit 1
 	fi
 
+	# Guard against a stale/mismatched environment (e.g. a cached mainnet
+	# project while requesting a testnet chain), which would silently
+	# generate URLs/commands for the wrong GCP project.
+	local expected_env
+	expected_env=$(chain_to_env "${chain}")
+	if [[ ${env} != "${expected_env}" ]]; then
+		printf '\n\033[1;31mError: Chain '\''%s'\'' requires the '\''%s'\'' environment, but the current environment is '\''%s'\''.\033[0m\n' "${chain}" "${expected_env}" "${env}" >&2
+		echo "Please run 'terraform -chdir=infra workspace select ${expected_env}' and then 'npm run cache:clear'." >&2
+		exit 1
+	fi
+
 	export function_name="relay-${chain}"
 	export topic_name="relay-${env}-${chain}"
 }
