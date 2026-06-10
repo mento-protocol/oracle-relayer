@@ -44,6 +44,9 @@ const chainMap: Record<typeof config.CHAIN, Chain> = {
   "polygon-testnet": polygonAmoy,
 };
 
+// Fraction of TimestampNotNew skips that fetch the full RPC diagnostic (1 in 10)
+const SKIP_DIAGNOSTIC_SAMPLE_RATE = 0.1;
+
 // Re-use clients across function invocations to save on initialization time and memory
 let publicClient: PublicClient;
 const walletClients: Map<string, WalletClient> = new Map<
@@ -350,7 +353,15 @@ async function handleContractFunctionRevertError(
   const errName = revertError.data?.errorName ?? "";
   switch (errName) {
     case "TimestampNotNew": {
-      const diagnostic = await getRelayDiagnostic(relayerContract, client);
+      // ~75-80% of minutes end here (no new Chainlink round yet), and the
+      // diagnostic costs 7-8 RPC reads per call — at 19 feeds x 1/min it was
+      // ~70% of all RPC traffic (which is billed per request on the dedicated
+      // endpoint). Sample it instead of fetching it every time; the warn paths
+      // below keep the full diagnostic unconditionally.
+      const diagnostic =
+        Math.random() < SKIP_DIAGNOSTIC_SAMPLE_RATE
+          ? await getRelayDiagnostic(relayerContract, client)
+          : undefined;
       logger.info(
         "Relay skipped. Chainlink timestamp is not newer than SortedOracles median timestamp",
         diagnostic ?? undefined,
