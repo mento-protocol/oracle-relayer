@@ -181,7 +181,7 @@ set_chain_vars() {
 	expected_env=$(chain_to_env "${chain}")
 	if [[ ${env} != "${expected_env}" ]]; then
 		printf '\n\033[1;31mError: Chain '\''%s'\'' requires the '\''%s'\'' environment, but the current environment is '\''%s'\''.\033[0m\n' "${chain}" "${expected_env}" "${env}" >&2
-		echo "Please run 'terraform -chdir=infra workspace select ${expected_env}' and then 'npm run cache:clear'." >&2
+		echo "Please run 'npm run ${expected_env}' to switch workspaces and clear the cache." >&2
 		exit 1
 	fi
 
