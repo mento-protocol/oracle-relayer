@@ -19,4 +19,6 @@ pnpm-lock.yaml
 # Local Stuff
 .project_vars_cache
 
-.claude/
+# Ignore .claude except shared project settings (SessionStart hook for worktree setup)
+.claude/*
+!.claude/settings.json
