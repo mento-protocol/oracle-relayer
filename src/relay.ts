@@ -294,7 +294,13 @@ async function isContract(address: string): Promise<boolean> {
   // Viem's getCode transforms the "0x" returned by the raw eth_getCode RPC call to undefined automatically:
   // https://github.com/wevm/viem/blob/5f6009360eaa41caf7318deb832dae7484190b5b/src/actions/public/getCode.ts#L71
   const isContract = !!contractCode;
-  contractCodeCache.set(address, isContract);
+  // Only cache positives. A negative means the relayer isn't deployed *yet* —
+  // caching it pins this warm instance to "not a contract" forever, so a relayer
+  // deployed after the function goes live never recovers without a redeploy.
+  // Code at an address is permanent, so a positive can never go stale.
+  if (isContract) {
+    contractCodeCache.set(address, true);
+  }
   return isContract;
 }
 
