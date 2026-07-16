@@ -16,7 +16,7 @@ The oracle relayer infrastructure is organized into **2 GCP projects** — one p
 | Environment | GCP Project              | Cloud Functions                                                      | Pub/Sub Topics                                                                               |
 | ----------- | ------------------------ | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | testnet     | `oracle-relayer-testnet` | `relay-celo-sepolia`, `relay-monad-testnet`, `relay-polygon-testnet` | `relay-testnet-celo-sepolia`, `relay-testnet-monad-testnet`, `relay-testnet-polygon-testnet` |
-| mainnet     | `oracle-relayer-mainnet` | `relay-celo`, `relay-monad`                                          | `relay-mainnet-celo`, `relay-mainnet-monad`                                                  |
+| mainnet     | `oracle-relayer-mainnet` | `relay-celo`, `relay-monad`, `relay-polygon`                         | `relay-mainnet-celo`, `relay-mainnet-monad`, `relay-mainnet-polygon`                         |
 
 Each environment hosts multiple cloud functions (one per chain), sharing the same source code but differentiated by the `CHAIN` environment variable. Terraform workspaces map to environments (`testnet` / `mainnet`), and `for_each` iterates over chains within each workspace.
 
@@ -264,6 +264,7 @@ gcloud beta logging tail 'resource.labels.service_name="relay-celo-sepolia" AND 
   - `deploy:function:polygon-testnet`: Deploys only the cloud function for polygon-testnet (via `gcloud functions deploy`)
   - `deploy:function:celo`: Deploys only the cloud function for celo (via `gcloud functions deploy`)
   - `deploy:function:monad`: Deploys only the cloud function for monad (via `gcloud functions deploy`)
+  - `deploy:function:polygon`: Deploys only the cloud function for polygon (via `gcloud functions deploy`)
   - `plan:testnet`: Shorthand for running `terraform plan` for the testnet environment
   - `plan:mainnet`: Shorthand for running `terraform plan` for the mainnet environment
   - `destroy:testnet`: Destroys entire testnet project (via `terraform destroy`)

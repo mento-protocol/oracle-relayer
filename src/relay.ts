@@ -22,6 +22,7 @@ import {
   celoSepolia,
   monad,
   monadTestnet,
+  polygon,
   polygonAmoy,
 } from "viem/chains";
 
@@ -42,6 +43,7 @@ const chainMap: Record<typeof config.CHAIN, Chain> = {
   "monad-testnet": monadTestnet,
   monad: monad,
   "polygon-testnet": polygonAmoy,
+  polygon: polygon,
 };
 
 // Fraction of TimestampNotNew skips that fetch the full RPC diagnostic (1 in 10)
