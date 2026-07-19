@@ -110,14 +110,14 @@ Add `for_each = local.chain_configs` to both resources:
 | `relayer_mnemonic`    | No change (one per project, shared across functions)                                                                                                                      |
 | `discord_webhook_url` | No longer per-chain. One per environment using `local.discord_webhook_url`. Secret ID: `discord-webhook-url-${terraform.workspace}` (e.g., `discord-webhook-url-testnet`) |
 
-### 1.6 `infra/monitoring.tf` — Per-Chain Metrics, Per-Environment Channels
+### 1.6 Chain-level GCP paging — Retired
 
-| Resource                                                   | Change                                                                                                                      |
-| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `google_logging_metric.successful_relay_count`             | Add `for_each = local.chain_configs`. Metric name: `successful_relay_count_${each.key}`. Filter by function name per chain. |
-| `google_monitoring_notification_channel.discord_channel`   | Stays singular. Uses `local.discord_webhook_url`.                                                                           |
-| `google_monitoring_notification_channel.victorops_channel` | Stays singular.                                                                                                             |
-| `google_monitoring_alert_policy.successful_relay_policy`   | Add `for_each = local.chain_configs`. One alert per chain.                                                                  |
+The successful-relay metric remains available as non-paging telemetry, but its
+GCP alert policy and notification channel were removed after this migration.
+Successful transactions follow each feed's source cadence, so aggregating them
+by chain produced false pages during FX market closures. Per-feed freshness paging now lives in
+`monitoring-monorepo/alerts/rules/`, where FX weekend muting is applied without
+silencing continuously updating feeds.
 
 ### 1.7 `infra/variables.tf` — Variable Changes
 
@@ -352,7 +352,7 @@ At any point before destroying old projects:
 | `infra/pubsub.tf`               | Add `for_each` for topics + schemas, include environment in naming                         |
 | `infra/scheduler.tf`            | Change `for_each` to flattened `all_scheduler_jobs` map                                    |
 | `infra/secret-manager.tf`       | Simplify discord webhook to per-environment                                                |
-| `infra/monitoring.tf`           | Add `for_each` for metrics + alerts, keep channels singular                                |
+| `infra/monitoring.tf`           | Retain success-count telemetry; paging moved to `monitoring-monorepo`                      |
 | `infra/local-dotenv-file.tf`    | Use `var.local_dev_chain` for CHAIN value                                                  |
 | `infra/variables.tf`            | Add `local_dev_chain`, rename discord webhook vars to per-environment                      |
 | `infra/terraform.tfvars`        | Rename discord webhook var names                                                           |
