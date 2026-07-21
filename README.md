@@ -175,6 +175,18 @@ For most local `terraform` or `gcloud` problems, your first steps should always 
 - Clear your local shell script cache via `npm run cache:clear`
 - Re-run the Terraform setup script via `./bin/set-up-terraform.sh`
 
+## Production Deployment Safety
+
+Before applying production Terraform changes:
+
+1. Sync the checkout with `origin/main` and select the `mainnet` workspace.
+2. Save a fresh plan and inspect every destructive change, especially removals
+   from chain-keyed `for_each` resources.
+3. Apply the exact saved plan that was reviewed.
+4. Confirm every deployed function is active, then check fresh success and error
+   logs for each chain.
+5. Run a final plan and require `No changes` before closing the deployment.
+
 ## Viewing Logs
 
 The Oracle Relayer uses structured logging with Google Cloud Logging. Logs include severity levels, timestamps, rate feed labels, and trace IDs for correlating function invocations.
