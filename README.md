@@ -106,9 +106,6 @@ Each environment hosts multiple cloud functions (one per chain), sharing the sam
    # / #alerts-testnet (testnet), prefixed with [chain][feed].
    slack_bot_token      = "<slack-bot-token>"
 
-   # Get it from our VictorOps by going to `Integrations` > `Stackdriver` and copying the URL. The routing key can be found under the settings tab
-   victorops_webhook_url   = "<victorops-webhook-url>/<victorops-routing-key>"
-
    # Optional (mainnet only): dedicated Celo RPC URL (e.g. a QuickNode HTTPS endpoint).
    # When set, the relayer uses it as the primary RPC and falls back to the public
    # Forno RPC. Leave unset to use only the public RPC. Stored in Secret Manager.
@@ -181,6 +178,12 @@ For most local `terraform` or `gcloud` problems, your first steps should always 
 ## Viewing Logs
 
 The Oracle Relayer uses structured logging with Google Cloud Logging. Logs include severity levels, timestamps, rate feed labels, and trace IDs for correlating function invocations.
+
+Relayer paging is owned by the per-feed Grafana rules in
+`mento-protocol/monitoring-monorepo/alerts/rules/`. FX feeds are muted during
+the configured weekend market closure; feeds that update continuously remain
+pageable. Do not add chain-level "no successful relay" alerts here: successful
+transactions follow each feed's source cadence and are not a service heartbeat.
 
 ### Quick Start
 
