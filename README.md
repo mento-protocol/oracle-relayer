@@ -179,13 +179,30 @@ For most local `terraform` or `gcloud` problems, your first steps should always 
 
 Before applying production Terraform changes:
 
-1. Sync the checkout with `origin/main` and select the `mainnet` workspace.
-2. Save a fresh plan and inspect every destructive change, especially removals
-   from chain-keyed `for_each` resources.
-3. Apply the exact saved plan that was reviewed.
-4. Confirm every deployed function is active, then check fresh success and error
-   logs for each chain.
-5. Run a final plan and require `No changes` before closing the deployment.
+1. Sync the checkout with `origin/main`, require a clean worktree at the same
+   commit as `origin/main`, and select the `mainnet` workspace.
+2. Save the plan in a restricted temporary file because Terraform plan files
+   contain production secret values in cleartext:
+
+   ```bash
+   git pull --ff-only origin main
+   test -z "$(git status --short)"
+   test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+   terraform -chdir=infra workspace select mainnet
+   relayer_plan="$(mktemp /private/tmp/oracle-relayer-mainnet.tfplan.XXXXXX)"
+   trap 'rm -f "$relayer_plan"' EXIT
+   terraform -chdir=infra plan -out="$relayer_plan"
+   ```
+
+3. Inspect every planned addition, update, replacement, and removal. Pay special
+   attention to chain- and feed-keyed `for_each` resources and scheduler payloads.
+4. Apply only the reviewed saved plan with
+   `terraform -chdir=infra apply "$relayer_plan"`.
+5. Confirm every deployed function is active. For every affected feed, verify
+   its scheduler and a fresh invocation with the expected `rateFeed` label, and
+   check error logs for each affected chain.
+6. Run a final plan, require `No changes`, then delete the saved plan with
+   `rm -f "$relayer_plan"` before closing the deployment.
 
 ## Viewing Logs
 
