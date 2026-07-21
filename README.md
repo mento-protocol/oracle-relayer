@@ -175,6 +175,42 @@ For most local `terraform` or `gcloud` problems, your first steps should always 
 - Clear your local shell script cache via `npm run cache:clear`
 - Re-run the Terraform setup script via `./bin/set-up-terraform.sh`
 
+## Production Deployment Safety
+
+Before applying production Terraform changes:
+
+1. Sync the checkout with `origin/main`, require a clean worktree at the same
+   commit as `origin/main`, and select the `mainnet` workspace.
+2. Save the plan in a restricted temporary file because Terraform plan files
+   contain production secret values in cleartext:
+
+   ```bash
+   set -euo pipefail
+   git pull --ff-only origin main
+   test -z "$(git status --short)" || {
+     echo "Refusing to plan from a dirty worktree" >&2
+     exit 1
+   }
+   test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" || {
+     echo "Refusing to plan when HEAD differs from origin/main" >&2
+     exit 1
+   }
+   terraform -chdir=infra workspace select mainnet
+   relayer_plan="$(mktemp "${TMPDIR:-/tmp}/oracle-relayer-mainnet.tfplan.XXXXXX")"
+   trap 'rm -f "$relayer_plan"' EXIT
+   terraform -chdir=infra plan -out="$relayer_plan"
+   ```
+
+3. Inspect every planned addition, update, replacement, and removal. Pay special
+   attention to chain- and feed-keyed `for_each` resources and scheduler payloads.
+4. Apply only the reviewed saved plan with
+   `terraform -chdir=infra apply "$relayer_plan"`.
+5. Confirm every deployed function is active. For every affected feed, verify
+   its scheduler and a fresh invocation with the expected `rateFeed` label, and
+   check error logs for each affected chain.
+6. Run a final plan, require `No changes`, then delete the saved plan with
+   `rm -f "$relayer_plan"` before closing the deployment.
+
 ## Viewing Logs
 
 The Oracle Relayer uses structured logging with Google Cloud Logging. Logs include severity levels, timestamps, rate feed labels, and trace IDs for correlating function invocations.
