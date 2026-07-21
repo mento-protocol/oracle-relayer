@@ -13,6 +13,7 @@ import {
   celoSepolia,
   monad,
   monadTestnet,
+  polygon,
   polygonAmoy,
 } from "viem/chains";
 import { config } from "./config";
@@ -34,6 +35,7 @@ const chains: Record<string, Chain> = {
   monad,
   "monad-testnet": monadTestnet,
   "polygon-testnet": polygonAmoy,
+  polygon,
 } as const;
 
 /**
@@ -63,7 +65,7 @@ async function main() {
   const chainArg = process.argv[2];
   if (!chainArg || !(chainArg in chains)) {
     console.log(
-      "Usage: pnpm refill:celo | pnpm refill:celo-sepolia | pnpm refill:monad | pnpm refill:monad-testnet | pnpm refill:polygon-testnet [--dry-run]",
+      "Usage: pnpm refill:celo | pnpm refill:celo-sepolia | pnpm refill:monad | pnpm refill:monad-testnet | pnpm refill:polygon-testnet | pnpm refill:polygon [--dry-run]",
     );
     process.exit(1);
   }

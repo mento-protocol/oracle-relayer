@@ -19,6 +19,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run test:unit
       - uses: trunk-io/trunk-action@v1
         with:
           check-mode: all

@@ -72,7 +72,7 @@ If for whatever reason service account impersonation doesn't work, you'll need a
 
 1. **Now deploy the mainnet project via `npm run deploy:mainnet`** (which uses `terraform apply`)
 
-   - This creates `oracle-relayer-mainnet` with cloud functions for celo and monad
+   - This creates `oracle-relayer-mainnet` with cloud functions for celo, monad, and polygon
 
 1. Update your local `gcloud` context to mainnet via `npm run mainnet`
 
@@ -81,6 +81,7 @@ If for whatever reason service account impersonation doesn't work, you'll need a
    ```sh
    npm run logs:celo
    npm run logs:monad
+   npm run logs:polygon
    ```
 
 ## Debugging Problems

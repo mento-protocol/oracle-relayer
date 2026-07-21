@@ -17,7 +17,8 @@ export interface Env {
     | "celo-sepolia"
     | "monad-testnet"
     | "monad"
-    | "polygon-testnet";
+    | "polygon-testnet"
+    | "polygon";
 }
 
 const schema: JSONSchemaType<Env> = {
@@ -45,6 +46,7 @@ const schema: JSONSchemaType<Env> = {
         "monad-testnet",
         "monad",
         "polygon-testnet",
+        "polygon",
       ],
     },
   },

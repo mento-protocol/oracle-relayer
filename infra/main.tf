@@ -3,7 +3,7 @@ locals {
 
   environment_chains = {
     "testnet" = ["celo-sepolia", "monad-testnet", "polygon-testnet"]
-    "mainnet" = ["celo", "monad"]
+    "mainnet" = ["celo", "monad", "polygon"]
   }
 
   chains = local.environment_chains[terraform.workspace]

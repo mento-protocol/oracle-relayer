@@ -93,5 +93,9 @@
     "eur_usd": "0x1De9678363193412264911ebCc797C54dA09ecBF",
     "chf_usd": "0xf091F44a7b8CB8C57747275496FdB9957B3d0909",
     "jpy_usd": "0x30fA361Bd8315926E6eF4CEB88A353fAB5A11F86"
+  },
+  "polygon": {
+    "eur_usd": "0xC5f7AcF94Fd76D2fD6c04ffC6C1D519cD16CE7dd",
+    "usdc_usd": "0x1C267bE736fB7B750243E41b1575Ab872Ae626bb"
   }
 }
