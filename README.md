@@ -185,11 +185,18 @@ Before applying production Terraform changes:
    contain production secret values in cleartext:
 
    ```bash
+   set -euo pipefail
    git pull --ff-only origin main
-   test -z "$(git status --short)"
-   test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+   test -z "$(git status --short)" || {
+     echo "Refusing to plan from a dirty worktree" >&2
+     exit 1
+   }
+   test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" || {
+     echo "Refusing to plan when HEAD differs from origin/main" >&2
+     exit 1
+   }
    terraform -chdir=infra workspace select mainnet
-   relayer_plan="$(mktemp /private/tmp/oracle-relayer-mainnet.tfplan.XXXXXX)"
+   relayer_plan="$(mktemp "${TMPDIR:-/tmp}/oracle-relayer-mainnet.tfplan.XXXXXX")"
    trap 'rm -f "$relayer_plan"' EXIT
    terraform -chdir=infra plan -out="$relayer_plan"
    ```
