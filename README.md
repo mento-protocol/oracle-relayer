@@ -256,6 +256,7 @@ gcloud beta logging tail 'resource.labels.service_name="relay-celo-sepolia" AND 
   - `dev`: Starts a local server for the cloud function code (with hot-reloading via `nodemon`)
   - `start`: Starts a local server for the cloud function code (without hot-reloading)
   - `test`: Triggers a local cloud function server with a mocked PubSub event
+  - `test:unit`: Builds the function and runs deterministic unit/configuration tests
 - **Switching Between Environments**
   - `testnet`: Switches the terraform workspace and your local `gcloud` project to testnet
   - `mainnet`: Switches the terraform workspace and your local `gcloud` project to mainnet
@@ -277,6 +278,7 @@ gcloud beta logging tail 'resource.labels.service_name="relay-celo-sepolia" AND 
   - `logs:monad-testnet`: View recent monad-testnet logs
   - `logs:celo`: View recent celo mainnet logs
   - `logs:monad`: View recent monad mainnet logs
+  - `logs:polygon`: View recent Polygon mainnet logs
   - `logs:tail:<chain>`: Stream logs in real-time for a specific chain
   - `logs:url:<chain>`: Generate log explorer URLs for a specific chain
 - **Manually Triggering a Relay**
@@ -284,12 +286,13 @@ gcloud beta logging tail 'resource.labels.service_name="relay-celo-sepolia" AND 
   - `test:monad-testnet`: Manually trigger a relay on monad-testnet, e.g. `npm run test:monad-testnet AUSD/USD`
   - `test:celo`: Manually trigger a relay on celo, e.g. `npm run test:celo CELO/ETH`
   - `test:monad`: Manually trigger a relay on monad, e.g. `npm run test:monad AUSD/USD`
+  - `test:polygon`: Manually trigger a relay on Polygon, e.g. `npm run test:polygon EUR/USD`
 - **General Helper & DX Scripts**
   - `cache:clear`: Clears local shell script cache and refresh it with current values
   - `generate:env`: Auto-generates/updates a local `.env` required by a locally running cloud function server
   - `todo`: Lists all `TODO` and `FIXME` comments
   - `get:relayer:signer`: Prints the signer address that calls the relay function on the given rate feed's relayer contract.
-  - `refill:<chain>`: Refills all relayer signer addresses with a low balance on the given network (e.g., `refill:celo`, `refill:celo-sepolia`)
+  - `refill:<chain>`: Refills all relayer signer addresses with a low balance on the given network (e.g., `refill:celo`, `refill:polygon`)
 - **Shell Scripts**
   - `set-up-terraform.sh`: Checks required IAM permissions, provisions terraform providers, modules, and workspaces
   - `check-gcloud-login.sh`: Checks for Google Cloud login and application-default credentials.
@@ -303,6 +306,7 @@ npm run refill:celo
 npm run refill:celo-sepolia
 npm run refill:monad
 npm run refill:monad-testnet
+npm run refill:polygon
 ```
 
 ## Updating the Cloud Function
@@ -320,7 +324,7 @@ You have two options to deploy the Cloud Function code, `terraform` or `gcloud` 
      - Less familiar way of deploying cloud functions (if you're used to `gcloud functions deploy`)
      - Less log output
      - Slightly slower because `terraform apply` will always fetch the current state from the cloud storage bucket before deploying
-2. Via `gcloud` by running `npm run deploy:function:[celo-sepolia|monad-testnet|polygon-testnet|celo|monad]`
+2. Via `gcloud` by running `npm run deploy:function:[celo-sepolia|monad-testnet|polygon-testnet|celo|monad|polygon]`
    - How? The npm task will:
      - Look up the service account used by the cloud function
      - Call `gcloud functions deploy` with the correct parameters

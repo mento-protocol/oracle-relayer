@@ -62,6 +62,7 @@
     "test:monad-testnet": "./bin/test-deployed-function.sh monad-testnet",
     "test:polygon": "./bin/test-deployed-function.sh polygon",
     "test:polygon-testnet": "./bin/test-deployed-function.sh polygon-testnet",
+    "test:unit": "npm run build && node --test test/*.test.mjs",
     "testnet": "terraform -chdir=infra workspace select testnet && npm run cache:clear",
     "todo": "git ls-files -c --exclude-standard | grep -v \"package.json\" | xargs grep -n -i --color \"TODO:\\|FIXME:\" || true",
     "update:mocks:celo-sepolia": "CHAIN=celo-sepolia NODE_ENV=development npx ts-node ./src/update-mock-aggregators.ts celo-sepolia",

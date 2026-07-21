@@ -29,6 +29,7 @@ import {
 import type { Logger } from "winston";
 import { chainlinkAggregatorAbi } from "./chainlink-aggregator-abi";
 import config from "./config";
+import { isContractWithPositiveCache } from "./contract-code-cache";
 import {
   sendInvalidPriceNotification,
   sendTxStuckNotification,
@@ -55,7 +56,7 @@ const walletClients: Map<string, WalletClient> = new Map<
   string,
   WalletClient
 >();
-const contractCodeCache = new Map<string, boolean>();
+const contractCodeCache = new Set<string>();
 
 // Shared transport, initialized once per instance via initTransport(). When an
 // RPC URL secret is configured we prefer it (a dedicated endpoint with
@@ -282,26 +283,12 @@ async function getOrCreateWalletClient(
 }
 
 async function isContract(address: string): Promise<boolean> {
-  if (contractCodeCache.has(address)) {
-    return contractCodeCache.get(address) ?? false;
-  }
-
   const publicClient = getOrCreatePublicClient();
-  const contractCode = await publicClient.getCode({
-    address: address as Address,
-  });
-
-  // Viem's getCode transforms the "0x" returned by the raw eth_getCode RPC call to undefined automatically:
-  // https://github.com/wevm/viem/blob/5f6009360eaa41caf7318deb832dae7484190b5b/src/actions/public/getCode.ts#L71
-  const isContract = !!contractCode;
-  // Only cache positives. A negative means the relayer isn't deployed *yet* —
-  // caching it pins this warm instance to "not a contract" forever, so a relayer
-  // deployed after the function goes live never recovers without a redeploy.
-  // Code at an address is permanent, so a positive can never go stale.
-  if (isContract) {
-    contractCodeCache.set(address, true);
-  }
-  return isContract;
+  return isContractWithPositiveCache(
+    address,
+    () => publicClient.getCode({ address: address as Address }),
+    contractCodeCache,
+  );
 }
 
 async function submitTx(
