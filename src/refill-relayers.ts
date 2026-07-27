@@ -29,12 +29,24 @@ const TRANSFER_AMOUNT = 50;
 const GAS_FEED_MIN_BALANCE_THRESHOLD = 5;
 const GAS_FEED_TRANSFER_AMOUNT = 10;
 
+// viem's default Amoy RPC (https://rpc-amoy.polygon.technology) stopped
+// resolving in DNS. This script reads chain.rpcUrls.default.http[0] directly,
+// so override the chain's default endpoint with a working public node
+// (mirrors relay.ts and update-mock-aggregators.ts).
+const polygonAmoyWithWorkingRpc: Chain = {
+  ...polygonAmoy,
+  rpcUrls: {
+    ...polygonAmoy.rpcUrls,
+    default: { http: ["https://polygon-amoy.drpc.org"] },
+  },
+};
+
 const chains: Record<string, Chain> = {
   celo,
   "celo-sepolia": celoSepolia,
   monad,
   "monad-testnet": monadTestnet,
-  "polygon-testnet": polygonAmoy,
+  "polygon-testnet": polygonAmoyWithWorkingRpc,
   polygon,
 } as const;
 
