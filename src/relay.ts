@@ -38,12 +38,26 @@ import getSecret from "./get-secret";
 import { relayerAbi } from "./relayer-abi";
 import { deriveRelayerAccount } from "./utils";
 
+// viem's default Amoy RPC (https://rpc-amoy.polygon.technology) stopped
+// resolving in DNS, which silently broke relays that rely on the chain's
+// default public RPC (i.e. those without RPC_URL_SECRET_ID). Override the
+// default endpoint with a working public node so both the bare http() path and
+// the fallback http() inside initTransport() hit a live RPC. A dedicated
+// RPC_URL_SECRET_ID still takes precedence when configured.
+const polygonAmoyWithWorkingRpc: Chain = {
+  ...polygonAmoy,
+  rpcUrls: {
+    ...polygonAmoy.rpcUrls,
+    default: { http: ["https://polygon-amoy.drpc.org"] },
+  },
+};
+
 const chainMap: Record<typeof config.CHAIN, Chain> = {
   celo: celo,
   "celo-sepolia": celoSepolia,
   "monad-testnet": monadTestnet,
   monad: monad,
-  "polygon-testnet": polygonAmoy,
+  "polygon-testnet": polygonAmoyWithWorkingRpc,
   polygon: polygon,
 };
 
