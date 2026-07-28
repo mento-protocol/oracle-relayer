@@ -38,13 +38,24 @@ type AggregatorMapping = Record<
 >;
 type AllAggregatorMappings = Partial<Record<ChainName, AggregatorMapping>>;
 
+// viem's default Amoy RPC (https://rpc-amoy.polygon.technology) stopped
+// resolving in DNS. This script uses a bare http() transport, so override the
+// chain's default endpoint with a working public node (mirrors relay.ts).
+const polygonAmoyWithWorkingRpc: Chain = {
+  ...polygonAmoy,
+  rpcUrls: {
+    ...polygonAmoy.rpcUrls,
+    default: { http: ["https://polygon-amoy.drpc.org"] },
+  },
+};
+
 const chainMap: Record<ChainName, Chain> = {
   celo,
   "celo-sepolia": celoSepolia,
   monad,
   "monad-testnet": monadTestnet,
   polygon,
-  "polygon-testnet": polygonAmoy,
+  "polygon-testnet": polygonAmoyWithWorkingRpc,
 };
 
 const publicClients = new Map<ChainName, PublicClient>();
