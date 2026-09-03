@@ -165,8 +165,9 @@ interface RunwayRow {
 function printRunwayTable(rows: RunwayRow[], symbol: string): void {
   const sorted = [...rows].sort((a, b) => a.runwayDays - b.runwayDays);
   const feedWidth = Math.max(...sorted.map((r) => r.rateFeed.length), 4);
+  const title = "Relayers (shortest runway first)";
   const header = `${"feed".padEnd(feedWidth)}  ${`balance (${symbol})`.padStart(16)}  ${`${symbol}/day`.padStart(9)}  ${"runway".padStart(9)}  action`;
-  console.log(`\nRunway per relayer (shortest first):\n${header}`);
+  console.log(`\n${title}\n${"-".repeat(header.length)}\n${header}`);
   for (const r of sorted) {
     console.log(
       `${r.rateFeed.padEnd(feedWidth)}  ${r.balance.toFixed(2).padStart(16)}  ${r.costPerDay.toString().padStart(9)}  ${`${r.runwayDays.toFixed(1)} d`.padStart(9)}  ${r.action}`,
@@ -186,9 +187,6 @@ async function main() {
   const dryRun = process.argv.includes("--dry-run");
   const chain = chains[chainArg];
   const symbol = chain.nativeCurrency.symbol;
-  console.log(
-    `Refilling relayer accounts on ${chainArg}${dryRun ? " (dry run)" : ""}...`,
-  );
 
   const relayerAddressesPath = path.resolve(
     process.cwd(),
@@ -218,6 +216,14 @@ async function main() {
     transport: http(chain.rpcUrls.default.http[0]),
   });
 
+  const refillerBalance =
+    Number(await publicClient.getBalance({ address: account.address })) / 1e18;
+  console.log(`Network:  ${chainArg}`);
+  console.log(
+    `Refiller: ${account.address} (${refillerBalance.toFixed(2)} ${symbol})`,
+  );
+  console.log(`Mode:     ${dryRun ? "dry run" : "live"}`);
+
   const mnemonic = await getSecret(config.RELAYER_MNEMONIC_SECRET_ID);
 
   const transfersMade = [];
@@ -246,10 +252,6 @@ async function main() {
     const balanceInNative = Number(balance) / 1e18;
     const runwayDays = balanceInNative / costPerDay;
 
-    console.log(
-      `${rateFeedKey}: ${relayerAccount.address} - Balance: ${balanceInNative.toFixed(4)} ${symbol} (~${runwayDays.toFixed(1)} days at ${String(costPerDay)} ${symbol}/day)`,
-    );
-
     const row: RunwayRow = {
       rateFeed: rateFeedKey,
       balance: balanceInNative,
@@ -263,9 +265,6 @@ async function main() {
       // Top up to the target rather than sending a fixed amount. Precision is
       // not important here, so round up and add one token of slack.
       const transferAmount = Math.ceil(targetBalance - balanceInNative) + 1;
-      console.log(
-        `  Below ${String(minRunwayDays)}-day threshold (${threshold.toFixed(2)} ${symbol}). ${dryRun ? "Would transfer" : "Transferring"} ${transferAmount.toString()} ${symbol} to reach ~${String(targetRunwayDays)} days...`,
-      );
       row.action = dryRun
         ? `would send ${String(transferAmount)}`
         : `send ${String(transferAmount)}`;
@@ -288,7 +287,6 @@ async function main() {
         });
         await publicClient.waitForTransactionReceipt({ hash });
 
-        console.log(`  Transaction sent: ${hash}`);
         transfersMade.push({
           rateFeed: rateFeedKey,
           address: relayerAccount.address,
@@ -297,13 +295,8 @@ async function main() {
         });
       } catch (error) {
         row.action = `FAILED to send ${String(transferAmount)}`;
-        console.error(
-          `  Error transferring ${symbol} to ${rateFeedKey}:`,
-          error,
-        );
+        console.error(`Error transferring ${symbol} to ${rateFeedKey}:`, error);
       }
-    } else {
-      console.log(`  Balance is sufficient.`);
     }
   }
 
