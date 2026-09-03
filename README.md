@@ -337,6 +337,8 @@ gcloud beta logging tail 'resource.labels.service_name="relay-celo-sepolia" AND 
 
 The relayer signer addresses run out of native tokens from time to time and need to be refilled. This can be done by adding a `REFILLER_PRIVATE_KEY` to the `.env` file (e.g. the deployer private key) and running the appropriate refill script, which will transfer tokens to all signer addresses running low on balance.
 
+Thresholds are expressed in days of runway: the script keeps a table of measured native-token burn per relayer per day (`DAILY_COST` in `src/refill-relayers.ts`), tops up any address holding fewer than `MIN_RUNWAY_DAYS` worth, and sends just enough (rounded up, plus one token) to reach `TARGET_RUNWAY_DAYS`. Burn differs a lot between chains and feeds (a Polygon relayer burns ~135 POL/day, a Celo gas feed ~0.05 CELO/day), so re-measure the table when gas prices or relay cadence change. Every run ends with a runway table sorted shortest-first, so addresses that are close to the threshold are visible even when nothing was sent. Pass `--dry-run` to see what would be sent without submitting anything.
+
 ```bash
 npm run refill:celo
 npm run refill:celo-sepolia
