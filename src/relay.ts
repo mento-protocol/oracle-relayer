@@ -270,8 +270,7 @@ function getOrCreatePublicClient(): PublicClient {
     publicClient = createPublicClient({
       chain: chainMap[config.CHAIN],
       transport: getTransport(),
-      // NOTE: viem's typescript support is super annoying, couldn't figure out how to make this work without the cast
-    }) as unknown as PublicClient;
+    });
   }
   return publicClient;
 }
