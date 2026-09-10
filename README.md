@@ -416,3 +416,14 @@ Dependabot manages dependency and GitHub Actions updates. The policy lives in
 - Packages pinned through `overrides` in `package.json` are outside
   Dependabot's reach. When an alert targets one of them, bump the override by
   hand and run `npm install` to refresh the lockfile.
+- Majors that the toolchain cannot take yet are listed under `ignore` in
+  `dependabot.yml` with the reason and the condition for removing the entry
+  (currently TypeScript 7 and `@eslint/js` 10).
+- `actions/*` minor and patch updates arrive in the `actions-minor-patch`
+  group and are merged by machine. A read-only classifier
+  ([`dependabot-auto-merge-candidate.yml`](./.github/workflows/dependabot-auto-merge-candidate.yml))
+  checks the Dependabot metadata; a `workflow_run` writer
+  ([`dependabot-auto-merge.yml`](./.github/workflows/dependabot-auto-merge.yml))
+  re-reads every fact, waits for the required checks, and squash-merges the
+  exact head. Closing the pull request is a durable veto. Every other
+  Dependabot pull request needs a human merge.
