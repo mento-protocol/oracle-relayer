@@ -6,8 +6,10 @@ errored.tfstate
 *.tfvars
 
 # Cloud Function Stuff
+# Every .env variant (backups, .env.local, .env.yaml, ...) except the tracked example.
 .env
-.env.yaml
+.env.*
+!.env.example
 dist/
 function-source.zip
 node_modules/
