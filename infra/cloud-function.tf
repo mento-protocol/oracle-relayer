@@ -150,6 +150,13 @@ data "archive_file" "function_source" {
     ".env*",
     ".env.example",
     ".env.yaml",
+    # Editor backups and swap files of .env (e.g. ..env.swp, .env~); mirrors .gitignore.
+    "*~",
+    "*.swp",
+    "*.swo",
+    "**/*~",
+    "**/*.swp",
+    "**/*.swo",
     ".git",
     ".github",
     ".gitignore",
