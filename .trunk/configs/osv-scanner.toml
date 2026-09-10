@@ -1,15 +1,6 @@
 # osv-scanner ignore list (read by trunk's osv-scanner linter).
 #
-# GHSA-mh99-v99m-4gvg — brace-expansion DoS via unbounded expansion length.
-# The only patched release is 5.0.8, whose named export ({ expand }) breaks the
-# older minimatch@3/@9 used by eslint, nodemon, and typescript-eslint, which
-# call require('brace-expansion') as a function. Those consumers are pinned to
-# the compatible 1.x/2.x lines via package.json "overrides", so the fixed
-# version cannot be adopted without a much larger devDependency upgrade.
-#
-# This is a dev/build-tooling-only DoS (glob expansion in linters/watchers) with
-# no reachable path in the deployed relay cloud function, so it is suppressed
-# here rather than forced. fast-uri and tar advisories ARE patched via overrides.
-[[IgnoredVulns]]
-id = "GHSA-mh99-v99m-4gvg"
-reason = "Only fixed in brace-expansion 5.0.8, incompatible with minimatch@3/@9 (dev tooling); not reachable in relay runtime"
+# Currently empty. Transitive advisories are patched through package.json
+# "overrides" (brace-expansion per minimatch line, fast-uri, js-yaml, qs, tar,
+# ...). Add an [[IgnoredVulns]] entry only when no compatible patched release
+# exists, and record the reason and the consumer chain here.
