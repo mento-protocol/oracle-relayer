@@ -38,6 +38,19 @@ updates:
       prefix: chore(deps)
       prefix-development: chore(deps-dev)
 
+    ignore:
+      # typescript 7 is the Go-native compiler; typescript-eslint 8.x declares
+      # peer typescript <6.1.0 and npm ci fails with ERESOLVE (PR #73,
+      # 2026-09-10). Drop this entry when typescript-eslint supports TS 7.
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
+      # @eslint/js 10 pairs with ESLint 10; Trunk runs the eslint pin in
+      # .trunk/trunk.yaml (9.x). Drop this entry when that pin moves to 10.
+      - dependency-name: "@eslint/js"
+        update-types:
+          - version-update:semver-major
+
     groups:
       # viem signs and broadcasts the relay transactions. Keep the signing
       # stack out of the broad production batch for focused human review.
@@ -134,14 +147,30 @@ updates:
       prefix: chore(ci)
 
     groups:
+      # GitHub-owned actions, minor and patch only. This group name is part of
+      # the auto-merge lane contract: the classifier in
+      # .github/workflows/dependabot-auto-merge-candidate.yml accepts only
+      # branches named dependabot/github_actions/actions-minor-patch-<hash>.
+      actions-minor-patch:
+        applies-to: version-updates
+        patterns:
+          - actions/*
+        exclude-patterns:
+          - actions/create-github-app-token
+        update-types:
+          - minor
+          - patch
+
       github-actions-routine:
         applies-to: version-updates
         patterns:
           - "*"
         exclude-patterns:
-          # The Claude actions hold write permissions and review PRs, and
+          # actions/* minor and patch updates have their own lane above. The
+          # Claude actions hold write permissions and review PRs, and
           # dependabot/* actions classify Dependabot PRs. Keep their updates
           # out of the routine batch.
+          - actions/*
           - anthropics/*
           - dependabot/*
         update-types:
@@ -151,6 +180,7 @@ updates:
       github-actions-manual:
         applies-to: version-updates
         patterns:
+          - actions/create-github-app-token
           - anthropics/*
           - dependabot/*
 
