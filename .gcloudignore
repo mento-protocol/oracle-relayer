@@ -23,3 +23,7 @@ infra
 src/aegis-export.ts
 
 #!include:.gitignore
+
+# .gitignore negates .env.example so it stays tracked; re-exclude it here
+# because a later negation wins over the .env.example line above.
+.env.example
