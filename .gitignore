@@ -6,9 +6,9 @@ errored.tfstate
 *.tfvars
 
 # Cloud Function Stuff
-# Every .env variant (backups, .env.local, .env.yaml, ...) except the tracked example.
-.env
-.env.*
+# Every .env variant (.env~, .env.bak, .env.local, .env.yaml, .env.backup-*, ...)
+# except the tracked example. .env may hold private keys.
+.env*
 !.env.example
 dist/
 function-source.zip
@@ -20,6 +20,11 @@ pnpm-lock.yaml
 
 # Local Stuff
 .project_vars_cache
+
+# Editor backups and swap files (a stray .env~ or ..env.swp must never be staged)
+*~
+*.swp
+*.swo
 
 # Ignore .claude except shared project settings (SessionStart hook for worktree setup)
 .claude/*

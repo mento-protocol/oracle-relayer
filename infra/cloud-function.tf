@@ -145,7 +145,9 @@ data "archive_file" "function_source" {
   # Not sure if this is stricly necessary when defining a .gcloudignore file, but better safe than sorry
   excludes = [".cursor",
     ".DS_Store",
+    # .env may hold private keys; keep this in sync with the .env* rule in .gitignore.
     ".env",
+    ".env*",
     ".env.example",
     ".env.yaml",
     ".git",
