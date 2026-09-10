@@ -398,3 +398,21 @@ To add a new chain to an existing environment:
 1. Run aegis in dev mode via `npm run dev`, check that there are no errors in the log outputs
 1. Submit a PR with your changes
 1. After successful code review, deploy your changes via `npm run deploy` in aegis
+
+## Dependency updates
+
+Dependabot manages dependency and GitHub Actions updates. The policy lives in
+[`.github/dependabot.yml`](./.github/dependabot.yml).
+
+- Version updates open grouped pull requests every Monday after a 7-day
+  cooldown (21 days for majors). Security updates skip the cooldown.
+- Dependabot security updates are enabled in the repository settings, so open
+  Dependabot alerts get a fix pull request when a patched version exists.
+- GitHub Actions are pinned to full commit SHAs with a version comment.
+  Dependabot bumps the SHA and the comment together. Do not reintroduce
+  floating tags such as `@v4`.
+- [`dependency-review.yml`](./.github/workflows/dependency-review.yml) fails a
+  pull request that adds a high or critical advisory to a runtime dependency.
+- Packages pinned through `overrides` in `package.json` are outside
+  Dependabot's reach. When an alert targets one of them, bump the override by
+  hand and run `npm install` to refresh the lockfile.
