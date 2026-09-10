@@ -73,7 +73,7 @@
     "@google-cloud/functions-framework": "^3.4.2",
     "@google-cloud/logging-winston": "^7.0.1",
     "@google-cloud/secret-manager": "^7.0.0",
-    "env-schema": "^6.0.0",
+    "env-schema": "^8.0.0",
     "viem": "^2.56.3",
     "winston": "^3.19.0"
   },
