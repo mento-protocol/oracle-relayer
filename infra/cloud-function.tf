@@ -124,7 +124,13 @@ resource "google_cloud_run_service_iam_member" "mock_aggregator_updater_invoker"
 # Compute a hash of the source files to detect actual changes
 # This is more reliable than using the zip's SHA256 which includes metadata
 locals {
-  source_files = fileset("${path.module}/..", "src/**")
+  # Editor backups, swap files and env files under src/ are excluded from the
+  # archive below, so keep them out of the hash too or a stray .swp would
+  # change the object name and trigger a redeploy of unchanged source.
+  source_files = [
+    for f in fileset("${path.module}/..", "src/**") : f
+    if !can(regex("(~|\\.swp|\\.swo)$", f)) && !can(regex("(^|/)\\.env", f))
+  ]
   package_files = [
     "${path.module}/../package.json",
     "${path.module}/../package-lock.json"
@@ -148,6 +154,7 @@ data "archive_file" "function_source" {
     # .env may hold private keys; keep this in sync with the .env* rule in .gitignore.
     ".env",
     ".env*",
+    "**/.env*",
     ".env.example",
     ".env.yaml",
     # Editor backups and swap files of .env (e.g. ..env.swp, .env~); mirrors .gitignore.
