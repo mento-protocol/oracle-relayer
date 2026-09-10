@@ -1,0 +1,160 @@
+version: 2
+
+# Dependency update policy. Mirrors the structure used in
+# mento-protocol/frontend-monorepo and mento-protocol/monitoring-monorepo:
+# weekly Monday batches, a supply-chain cooldown for version updates, grouped
+# pull requests per risk tier, and review-sensitive packages kept in their own
+# pull requests. Security updates bypass cooldown and arrive immediately.
+#
+# Transitive packages pinned through package.json "overrides" (fast-uri,
+# js-yaml, tar, ...) are outside Dependabot's reach: Dependabot never edits
+# overrides, so an advisory against an overridden package needs a manual
+# override bump. Check `npm audit` when Dependabot reports that it cannot
+# update a package to a non-vulnerable version.
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00" # trunk-ignore(yamllint/quoted-strings)
+      timezone: UTC
+
+    # Buy supply-chain detection time. Most malicious-package incidents are
+    # detected and yanked within 7 days of publication. Security updates are
+    # exempt from cooldown.
+    cooldown:
+      default-days: 7
+      semver-major-days: 21
+      semver-minor-days: 7
+      semver-patch-days: 7
+
+    open-pull-requests-limit: 8
+
+    labels:
+      - dependencies
+
+    commit-message:
+      prefix: chore(deps)
+      prefix-development: chore(deps-dev)
+
+    groups:
+      # viem signs and broadcasts the relay transactions. Keep the signing
+      # stack out of the broad production batch for focused human review.
+      web3-stack:
+        applies-to: version-updates
+        patterns:
+          - viem
+          - viem-*
+          - "@noble/*"
+          - "@scure/*"
+        update-types:
+          - minor
+          - patch
+
+      # Google Cloud runtime: Functions Framework, Secret Manager, logging.
+      # These decide how the function boots and reads the signer key.
+      gcp-runtime:
+        applies-to: version-updates
+        patterns:
+          - "@google-cloud/*"
+        update-types:
+          - minor
+          - patch
+
+      # Ungrouped production stragglers arrive as one weekly PR. Majors stay
+      # individual PRs.
+      production-misc:
+        applies-to: version-updates
+        dependency-type: production
+        patterns:
+          - "*"
+        exclude-patterns:
+          - viem
+          - viem-*
+          - "@noble/*"
+          - "@scure/*"
+          - "@google-cloud/*"
+        update-types:
+          - minor
+          - patch
+
+      tooling:
+        applies-to: version-updates
+        dependency-type: development
+        patterns:
+          - "*"
+
+      web3-stack-security:
+        applies-to: security-updates
+        patterns:
+          - viem
+          - viem-*
+          - "@noble/*"
+          - "@scure/*"
+
+      security-runtime:
+        applies-to: security-updates
+        dependency-type: production
+        patterns:
+          - "*"
+        exclude-patterns:
+          - viem
+          - viem-*
+          - "@noble/*"
+          - "@scure/*"
+
+      security-tooling:
+        applies-to: security-updates
+        dependency-type: development
+        patterns:
+          - "*"
+
+  # GitHub Actions are pinned to full commit SHAs. Dependabot updates the SHA
+  # and the trailing version comment together.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00" # trunk-ignore(yamllint/quoted-strings)
+      timezone: UTC
+
+    # Per-semver cooldown is not supported for github-actions; only
+    # default-days is honored.
+    cooldown:
+      default-days: 7
+
+    open-pull-requests-limit: 3
+
+    labels:
+      - dependencies
+
+    commit-message:
+      prefix: chore(ci)
+
+    groups:
+      github-actions-routine:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        exclude-patterns:
+          # The Claude actions hold write permissions and review PRs, and
+          # dependabot/* actions classify Dependabot PRs. Keep their updates
+          # out of the routine batch.
+          - anthropics/*
+          - dependabot/*
+        update-types:
+          - minor
+          - patch
+
+      github-actions-manual:
+        applies-to: version-updates
+        patterns:
+          - anthropics/*
+          - dependabot/*
+
+      github-actions-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
