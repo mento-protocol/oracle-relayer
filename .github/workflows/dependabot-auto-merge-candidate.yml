@@ -1,0 +1,97 @@
+name: Dependabot auto-merge candidate
+
+# This unprivileged workflow classifies one narrow Dependabot update group.
+# It runs with a read-only token. It never checks out pull-request code, reads
+# secrets, writes repository state, or passes data to the privileged writer.
+# The writer treats this run only as a signal and re-reads every trusted fact.
+# Ported from mento-protocol/monitoring-monorepo.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize]
+
+permissions: {}
+
+concurrency:
+  # Include the head repository before cancellation can run. A fork that reuses
+  # the Dependabot branch name must not cancel the base-repository classifier.
+  group: dependabot-auto-merge-candidate-${{ github.event.pull_request.head.repo.full_name }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  classify:
+    name: classify
+    if: >-
+      github.repository == 'mento-protocol/oracle-relayer' &&
+      github.actor == 'dependabot[bot]' &&
+      github.triggering_actor == 'dependabot[bot]' &&
+      github.run_attempt == 1 &&
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.base.repo.full_name == github.repository &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.label == format('mento-protocol:{0}', github.event.pull_request.head.ref) &&
+      startsWith(github.event.pull_request.head.ref, 'dependabot/github_actions/actions-minor-patch-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Validate candidate event
+        env:
+          EXPECTED_REPOSITORY: mento-protocol/oracle-relayer
+          EVENT_REPOSITORY: ${{ github.repository }}
+          EVENT_ACTOR: ${{ github.actor }}
+          EVENT_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+          EVENT_AUTHOR: ${{ github.event.pull_request.user.login }}
+          EVENT_BASE_REPOSITORY: ${{ github.event.pull_request.base.repo.full_name }}
+          EVENT_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          EVENT_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          EVENT_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          EVENT_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          [[ "$EVENT_REPOSITORY" == "$EXPECTED_REPOSITORY" ]]
+          [[ "$EVENT_ACTOR" == 'dependabot[bot]' ]]
+          [[ "$EVENT_TRIGGERING_ACTOR" == 'dependabot[bot]' ]]
+          [[ "$EVENT_AUTHOR" == 'dependabot[bot]' ]]
+          [[ "$EVENT_BASE_REPOSITORY" == "$EXPECTED_REPOSITORY" ]]
+          [[ "$EVENT_BASE_REF" == 'main' ]]
+          [[ "$EVENT_HEAD_REPOSITORY" == "$EXPECTED_REPOSITORY" ]]
+          [[ "$EVENT_RUN_ATTEMPT" == '1' ]]
+          [[ "$EVENT_HEAD_REF" =~ ^dependabot/github_actions/actions-minor-patch-[0-9a-f]{10}$ ]]
+
+      - name: Fetch verified Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+        with:
+          github-token: ${{ github.token }}
+
+      - name: Mark routine update eligible
+        id: eligibility
+        if: >-
+          steps.metadata.outputs.package-ecosystem == 'github_actions' &&
+          steps.metadata.outputs.directory == '/' &&
+          steps.metadata.outputs.target-branch == 'main' &&
+          steps.metadata.outputs.dependency-group == 'actions-minor-patch' &&
+          (steps.metadata.outputs.update-type == 'version-update:semver-minor' ||
+           steps.metadata.outputs.update-type == 'version-update:semver-patch') &&
+          steps.metadata.outputs.maintainer-changes == 'false'
+        env:
+          DEPENDENCY_NAMES: ${{ steps.metadata.outputs.dependency-names }}
+        run: |
+          set -euo pipefail
+          shopt -s extglob
+          IFS=',' read -ra dependencies <<< "$DEPENDENCY_NAMES"
+          ((${#dependencies[@]} > 0))
+          for dependency in "${dependencies[@]}"; do
+            dependency="${dependency##+([[:space:]])}"
+            dependency="${dependency%%+([[:space:]])}"
+            [[ -n "$dependency" ]]
+            dependency="${dependency,,}"
+            [[ "$dependency" =~ ^actions/ ]]
+            [[ "$dependency" != 'actions/create-github-app-token' ]]
+          done
