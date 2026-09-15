@@ -20,6 +20,6 @@ names, flags, or SHAs. A teammate from another team should be able to stop here.
 
 <!--
 One line per check, on the head you pushed. Group passes on one line:
-`pnpm test` 42 ✓, `pnpm lint` ✓. Skipped, failed, and not-proven items each
+`npm run test:unit` 42 ✓, `trunk check` ✓. Skipped, failed, and not-proven items each
 get their own line. Whole body: about 250 words, 400 at most.
 -->
