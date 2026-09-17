@@ -15,6 +15,10 @@ export interface Env {
   // Secret Manager secret ID holding the private key of the wallet that tops
   // up the relayer signers. Only set on the refillRelayers cloud function.
   REFILLER_PRIVATE_KEY_SECRET_ID?: string;
+  // Local only: the refiller key for `npm run refill:<chain>`, set in .env.
+  // It has to be declared here because env-schema (v8+) no longer copies .env
+  // into process.env, it only returns the variables that are in this schema.
+  REFILLER_PRIVATE_KEY?: string;
   CHAIN:
     | "celo"
     | "celo-sepolia"
@@ -42,6 +46,7 @@ const schema: JSONSchemaType<Env> = {
     RELAYER_MNEMONIC_SECRET_ID: { type: "string" },
     RPC_URL_SECRET_ID: { type: "string", nullable: true },
     REFILLER_PRIVATE_KEY_SECRET_ID: { type: "string", nullable: true },
+    REFILLER_PRIVATE_KEY: { type: "string", nullable: true },
     CHAIN: {
       type: "string",
       enum: [

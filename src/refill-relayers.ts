@@ -380,14 +380,15 @@ async function main() {
 
   // Loaded here rather than at the top of the file: importing config validates
   // the env vars, which would make this module unusable from the unit tests.
-  // It also loads .env, so it has to come before REFILLER_PRIVATE_KEY is read.
+  // config is also what reads .env, so REFILLER_PRIVATE_KEY comes from it
+  // rather than from process.env.
   const { config } = await import("./config");
   const { default: getSecret } = await import("./get-secret");
 
-  const privateKey = process.env.REFILLER_PRIVATE_KEY;
+  const privateKey = config.REFILLER_PRIVATE_KEY;
   if (!privateKey) {
     console.error(
-      "Error: REFILLER_PRIVATE_KEY environment variable is not set",
+      "Error: REFILLER_PRIVATE_KEY is not set (add it to .env or export it)",
     );
     process.exit(1);
   }
