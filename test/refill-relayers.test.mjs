@@ -74,6 +74,7 @@ test("the automated refill is wired from scheduler to function", async () => {
   assert.match(index, /rate_feeds: rateFeedKeys/);
   // A single wallet pays for every transfer, so runs must never overlap
   assert.match(cloudFunction, /max_instance_count\s*=\s*1/);
+  assert.match(cloudFunction, /max_instance_request_concurrency\s*=\s*1/);
 });
 
 test("redacts the dedicated RPC URL from text that is about to be logged", () => {

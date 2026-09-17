@@ -149,8 +149,12 @@ resource "google_cloudfunctions2_function" "refill_relayers" {
     # sequential. Celo has 35 relayers, so leave generous headroom.
     timeout_seconds = 300
     # All transfers come from a single wallet, so two overlapping runs would
-    # fight over its nonce.
-    max_instance_count = 1
+    # fight over its nonce and could top the same signer up twice. One instance
+    # serving one request at a time rules that out. Concurrency 1 is already
+    # the platform default at this CPU size; it is pinned so that raising the
+    # memory/CPU later cannot silently lift it.
+    max_instance_count               = 1
+    max_instance_request_concurrency = 1
 
     environment_variables = merge(
       {
