@@ -380,17 +380,25 @@ async function main() {
 
   // Loaded here rather than at the top of the file: importing config validates
   // the env vars, which would make this module unusable from the unit tests.
-  // config is also what reads .env, so REFILLER_PRIVATE_KEY comes from it
-  // rather than from process.env.
   const { config } = await import("./config");
   const { default: getSecret } = await import("./get-secret");
 
-  const privateKey = config.REFILLER_PRIVATE_KEY;
+  // The refiller key is read from Secret Manager, the same wallet the daily
+  // cloud functions use, so there is a single wallet to fund and nothing to
+  // keep in .env. Setting REFILLER_PRIVATE_KEY (exported, or in .env) overrides
+  // that, e.g. to refill from another wallet or in an environment where the
+  // refiller secret was never created.
+  let privateKey = config.REFILLER_PRIVATE_KEY;
+  let keySource = "REFILLER_PRIVATE_KEY env var";
   if (!privateKey) {
-    console.error(
-      "Error: REFILLER_PRIVATE_KEY is not set (add it to .env or export it)",
-    );
-    process.exit(1);
+    if (!config.REFILLER_PRIVATE_KEY_SECRET_ID) {
+      console.error(
+        "Error: no refiller key configured. Set REFILLER_PRIVATE_KEY_SECRET_ID (run `npm run generate:env`) or REFILLER_PRIVATE_KEY.",
+      );
+      process.exit(1);
+    }
+    privateKey = await getSecret(config.REFILLER_PRIVATE_KEY_SECRET_ID);
+    keySource = `Secret Manager (${config.REFILLER_PRIVATE_KEY_SECRET_ID})`;
   }
 
   const mnemonic = await getSecret(config.RELAYER_MNEMONIC_SECRET_ID);
@@ -408,6 +416,7 @@ async function main() {
   console.log(
     `Refiller: ${result.refillerAddress} (${result.refillerBalanceBefore.toFixed(2)} ${symbol})`,
   );
+  console.log(`Key:      ${keySource}`);
   console.log(`Mode:     ${dryRun ? "dry run" : "live"}`);
 
   printRunwayTable(result.rows, symbol);

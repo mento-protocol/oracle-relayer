@@ -12,12 +12,13 @@ export interface Env {
   // dedicated QuickNode endpoint). When unset, the chain's default public RPC
   // is used. See initTransport() in relay.ts.
   RPC_URL_SECRET_ID?: string;
-  // Secret Manager secret ID holding the private key of the wallet that tops
-  // up the relayer signers. Only set on the refillRelayers cloud function.
+  // Secret Manager secret ID holding the private key of the refiller wallet,
+  // which tops up the relayer signers. Set on the refillRelayers cloud
+  // functions and in the local .env (for `npm run refill:<chain>`).
   REFILLER_PRIVATE_KEY_SECRET_ID?: string;
-  // Local only: the refiller key for `npm run refill:<chain>`, set in .env.
-  // It has to be declared here because env-schema (v8+) no longer copies .env
-  // into process.env, it only returns the variables that are in this schema.
+  // Local only, optional: overrides the Secret Manager key for
+  // `npm run refill:<chain>`. Declared here because env-schema (v8+) no longer
+  // copies .env into process.env, it only returns variables in this schema.
   REFILLER_PRIVATE_KEY?: string;
   CHAIN:
     | "celo"
