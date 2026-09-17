@@ -106,6 +106,12 @@ Each environment hosts multiple cloud functions (one per chain), sharing the sam
    # / #alerts-testnet (testnet), prefixed with [chain][feed].
    slack_bot_token      = "<slack-bot-token>"
 
+   # Optional: private key of the refiller wallet. When set, a `refill-relayers-<chain>`
+   # cloud function is deployed for every chain of the workspace and tops up the relayer
+   # signers once a day (see "Refilling relayer signer accounts"). The wallet has to be
+   # funded manually on each chain. Leave unset to refill only by hand.
+   # refiller_private_key = "<private-key>"
+
    # Optional (mainnet only): dedicated Celo RPC URL (e.g. a QuickNode HTTPS endpoint).
    # When set, the relayer uses it as the primary RPC and falls back to the public
    # Forno RPC. Leave unset to use only the public RPC. Stored in Secret Manager.
@@ -335,7 +341,9 @@ gcloud beta logging tail 'resource.labels.service_name="relay-celo-sepolia" AND 
 
 ## Refilling relayer signer accounts
 
-The relayer signer addresses run out of native tokens from time to time and need to be refilled. This can be done by adding a `REFILLER_PRIVATE_KEY` to the `.env` file (e.g. the deployer private key) and running the appropriate refill script, which will transfer tokens to all signer addresses running low on balance.
+The relayer signer addresses burn native tokens on every relay and need to be refilled. This happens automatically once a day (see below), and can also be done by hand by running the appropriate refill script, which will transfer tokens to all signer addresses running low on balance. Both paths run the same code and, by default, the same wallet: the script reads the refiller key from Secret Manager (`REFILLER_PRIVATE_KEY_SECRET_ID` in `.env`, written by `npm run generate:env`), so there is no key to keep locally. To refill from a different wallet, export `REFILLER_PRIVATE_KEY` for that run. Avoid live manual runs around 06:00 UTC, when the daily function sends from the same wallet.
+
+Thresholds are expressed in days of runway: the script keeps a table of measured native-token burn per relayer per day (`DAILY_COST` in `src/refill-relayers.ts`), tops up any address holding fewer than `MIN_RUNWAY_DAYS` worth, and sends just enough (rounded up, plus one token) to reach `TARGET_RUNWAY_DAYS`. Burn differs a lot between chains and feeds (a Polygon relayer burns ~135 POL/day, a Celo gas feed ~0.05 CELO/day), so re-measure the table when gas prices or relay cadence change. Every run ends with a runway table sorted shortest-first, so addresses that are close to the threshold are visible even when nothing was sent. Pass `--dry-run` to see what would be sent without submitting anything.
 
 ```bash
 npm run refill:celo
@@ -344,6 +352,17 @@ npm run refill:monad
 npm run refill:monad-testnet
 npm run refill:polygon
 ```
+
+### Automated refill
+
+When `refiller_private_key` is set in `terraform.tfvars`, Terraform deploys one `refill-relayers-<chain>` cloud function per chain, triggered by a Cloud Scheduler job every day at 06:00 UTC. The function derives every signer address from the relayer mnemonic, checks its balance against the runway thresholds and tops it up from the refiller wallet, exactly like the script above.
+
+- **The refiller wallet** is a single key (so the same address on every chain), stored in Secret Manager as `refiller-private-key`. It has to be funded manually on each chain. At the burn rates measured in September 2026 a month of relaying costs roughly 7,500 CELO, 7,000 POL and 2,100 MON.
+- **RPC**: where a dedicated RPC is configured (`celo_rpc_url`, Celo mainnet for now) the refill function uses it, with the public RPC as the fallback, exactly like the relay function. All transfers come from one wallet in sequence, and load-balanced public RPCs can serve a stale nonce or balance between calls. The URL contains an access token and is redacted from logged errors.
+- **Logs**: every run writes exactly one summary line, `Refill ok: …` (transfers made, total sent, refiller balance left) or `Refill failed: …` (with the transfers that could not be sent, e.g. because the refiller wallet is empty). Filter on `labels.rateFeed="refill-relayers"`. A failed transfer is simply retried on the next daily run, and the 7-day threshold leaves plenty of room for that.
+- **Dry run**: the deployed functions always send. To preview what a run would do, use the script locally: `npm run refill:<chain> -- --dry-run` (mind the `--`, without it npm swallows the flag and the script runs live).
+- **New rate feeds** are picked up automatically: the scheduler message carries the rate feed keys from `infra/relayer_addresses.json`, so a `terraform apply` after adding a feed is enough. Add a per-feed entry to `DAILY_COST` only if the feed relays at a different pace than the chain default.
+- **Pausing**: pause the `refill-relayers-<chain>` job in Cloud Scheduler, or remove `refiller_private_key` from `terraform.tfvars` and apply to tear the automated refill down.
 
 ## Updating the Cloud Function
 

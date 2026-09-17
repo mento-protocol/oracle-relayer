@@ -1,8 +1,10 @@
 import { cloudEvent, CloudEvent } from "@google-cloud/functions-framework";
 import config from "./config";
+import getSecret from "./get-secret";
 import getLogger from "./logger";
+import { refillRelayers } from "./refill-relayers";
 import relay from "./relay";
-import type { PubsubData, RelayRequested } from "./types";
+import type { PubsubData, RefillRequested, RelayRequested } from "./types";
 import { updateMockAggregators } from "./update-mock-aggregators";
 import { getTraceId } from "./utils";
 
@@ -69,4 +71,70 @@ cloudEvent("updateMockAggregators", async (event: CloudEvent<PubsubData>) => {
   }
 
   return { status: "success" };
+});
+
+// Runs once a day per chain (see infra/scheduler.tf) and tops up every relayer
+// signer that is below its runway threshold from the refiller wallet. Same
+// logic as `npm run refill:<chain>`. Logs a single "Refill ok" / "Refill
+// failed" line per run.
+cloudEvent("refillRelayers", async (event: CloudEvent<PubsubData>) => {
+  const traceId = getTraceId(event);
+  const logger = getLogger("refill-relayers", traceId);
+
+  try {
+    const eventData = event.data?.message.data;
+    if (typeof eventData !== "string") {
+      throw new Error("No event data found");
+    }
+    const { rate_feeds: rateFeedKeys } = JSON.parse(
+      Buffer.from(eventData, "base64").toString("utf-8"),
+    ) as RefillRequested;
+    if (!Array.isArray(rateFeedKeys) || rateFeedKeys.length === 0) {
+      throw new Error("Event data contains no rate_feeds");
+    }
+
+    if (!config.REFILLER_PRIVATE_KEY_SECRET_ID) {
+      throw new Error("REFILLER_PRIVATE_KEY_SECRET_ID is not set");
+    }
+    const [mnemonic, refillerPrivateKey] = await Promise.all([
+      getSecret(config.RELAYER_MNEMONIC_SECRET_ID),
+      getSecret(config.REFILLER_PRIVATE_KEY_SECRET_ID),
+    ]);
+
+    // Only set where a dedicated RPC is configured (celo mainnet for now)
+    const rpcUrl = config.RPC_URL_SECRET_ID
+      ? (await getSecret(config.RPC_URL_SECRET_ID)).trim()
+      : undefined;
+
+    const result = await refillRelayers(
+      config.CHAIN,
+      rateFeedKeys,
+      mnemonic,
+      refillerPrivateKey,
+      false,
+      rpcUrl,
+    );
+
+    const { symbol } = result;
+    const totalSent = result.transfers.reduce((sum, t) => sum + t.amount, 0);
+    const summary = `${result.transfers.length.toString()} of ${result.rows.length.toString()} relayers topped up, ${totalSent.toString()} ${symbol} sent, refiller ${result.refillerAddress} has ${result.refillerBalanceAfter.toFixed(2)} ${symbol} left`;
+    const details = {
+      transfers: result.transfers,
+      errors: result.errors,
+    };
+
+    if (result.errors.length > 0) {
+      logger.error(
+        `Refill failed: ${result.errors.length.toString()} transfers could not be sent. ${summary}`,
+        details,
+      );
+      return { status: "error", message: "Refill failed" };
+    }
+
+    logger.info(`Refill ok: ${summary}`, details);
+    return { status: "success" };
+  } catch (error) {
+    logger.error("Refill failed with an unhandled error", error);
+    return { status: "error", message: "Refill failed" };
+  }
 });

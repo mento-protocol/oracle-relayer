@@ -42,3 +42,24 @@ resource "google_cloud_scheduler_job" "mock_aggregator_update_jobs" {
     data       = base64encode("{}")
   }
 }
+
+# Tops up the relayer signers once a day. The message carries the chain's rate
+# feed keys because the deployed function has no access to
+# relayer_addresses.json (the infra folder is not part of the function source).
+resource "google_cloud_scheduler_job" "refill_relayers_jobs" {
+  for_each = local.refiller_chain_configs
+
+  project     = module.oracle_relayer.project_id
+  region      = var.region
+  name        = "refill-relayers-${each.key}"
+  description = "Tops up the relayer signers on ${each.key} from the refiller wallet once per day at 06:00 UTC"
+  schedule    = "0 6 * * *"
+  time_zone   = "Etc/UTC"
+
+  pubsub_target {
+    topic_name = google_pubsub_topic.refill_relayers[each.key].id
+    data = base64encode(jsonencode({
+      rate_feeds = keys(each.value.relayer_addresses)
+    }))
+  }
+}

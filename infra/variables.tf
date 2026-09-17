@@ -40,6 +40,22 @@ variable "mock_aggregator_reporter_private_key" {
   default   = ""
 }
 
+# Private key of the refiller wallet: the account the daily refill-relayers
+# cloud functions send native tokens from to top up the relayer signers. The
+# same key (and so the same address) is used on every chain of the workspace
+# and has to be funded manually on each of them. Leave empty to not deploy the
+# automated refill at all (the manual `npm run refill:<chain>` still works).
+variable "refiller_private_key" {
+  type      = string
+  sensitive = true
+  default   = ""
+}
+
+variable "refiller_private_key_secret_id" {
+  type    = string
+  default = "refiller-private-key"
+}
+
 # Optional dedicated RPC URL for Celo mainnet (e.g. a QuickNode HTTPS endpoint).
 # When set, the relayer uses it as the primary RPC and falls back to the chain's
 # default public RPC (Forno). Leave empty to use only the default public RPC.
