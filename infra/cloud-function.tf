@@ -158,7 +158,6 @@ resource "google_cloudfunctions2_function" "refill_relayers" {
       SLACK_CHANNEL                  = local.slack_channel
       RELAYER_MNEMONIC_SECRET_ID     = google_secret_manager_secret.relayer_mnemonic.secret_id
       REFILLER_PRIVATE_KEY_SECRET_ID = google_secret_manager_secret.refiller_private_key[0].secret_id
-      REFILL_DRY_RUN                 = tostring(var.refill_dry_run)
       LOG_EXECUTION_ID               = "true"
       NODE_ENV                       = each.value.is_production ? "production" : "development"
       CHAIN                          = each.key

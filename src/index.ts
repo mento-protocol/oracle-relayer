@@ -101,22 +101,16 @@ cloudEvent("refillRelayers", async (event: CloudEvent<PubsubData>) => {
       getSecret(config.REFILLER_PRIVATE_KEY_SECRET_ID),
     ]);
 
-    const dryRun = process.env.REFILL_DRY_RUN === "true";
     const result = await refillRelayers(
       config.CHAIN,
       rateFeedKeys,
       mnemonic,
       refillerPrivateKey,
-      dryRun,
     );
 
     const { symbol } = result;
     const totalSent = result.transfers.reduce((sum, t) => sum + t.amount, 0);
-    const counts = `${result.transfers.length.toString()} of ${result.rows.length.toString()} relayers`;
-    const refiller = `refiller ${result.refillerAddress} has ${result.refillerBalanceAfter.toFixed(2)} ${symbol}`;
-    const summary = dryRun
-      ? `[dry run] would top up ${counts} with ${totalSent.toString()} ${symbol}, nothing was sent, ${refiller}`
-      : `${counts} topped up, ${totalSent.toString()} ${symbol} sent, ${refiller} left`;
+    const summary = `${result.transfers.length.toString()} of ${result.rows.length.toString()} relayers topped up, ${totalSent.toString()} ${symbol} sent, refiller ${result.refillerAddress} has ${result.refillerBalanceAfter.toFixed(2)} ${symbol} left`;
     const details = {
       transfers: result.transfers,
       errors: result.errors,

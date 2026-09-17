@@ -56,14 +56,6 @@ variable "refiller_private_key_secret_id" {
   default = "refiller-private-key"
 }
 
-# When true, the refill-relayers functions only log the transfers they would
-# make and send nothing. Useful for the first days after deploying to a new
-# environment.
-variable "refill_dry_run" {
-  type    = bool
-  default = false
-}
-
 # Optional dedicated RPC URL for Celo mainnet (e.g. a QuickNode HTTPS endpoint).
 # When set, the relayer uses it as the primary RPC and falls back to the chain's
 # default public RPC (Forno). Leave empty to use only the default public RPC.

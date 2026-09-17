@@ -111,7 +111,6 @@ Each environment hosts multiple cloud functions (one per chain), sharing the sam
    # signers once a day (see "Refilling relayer signer accounts"). The wallet has to be
    # funded manually on each chain. Leave unset to refill only by hand.
    # refiller_private_key = "<private-key>"
-   # refill_dry_run       = true # only log what would be sent
 
    # Optional (mainnet only): dedicated Celo RPC URL (e.g. a QuickNode HTTPS endpoint).
    # When set, the relayer uses it as the primary RPC and falls back to the public
@@ -360,7 +359,7 @@ When `refiller_private_key` is set in `terraform.tfvars`, Terraform deploys one 
 
 - **The refiller wallet** is a single key (so the same address on every chain), stored in Secret Manager as `refiller-private-key`. It has to be funded manually on each chain. At the burn rates measured in September 2026 a month of relaying costs roughly 7,500 CELO, 7,000 POL and 2,100 MON.
 - **Logs**: every run writes exactly one summary line, `Refill ok: …` (transfers made, total sent, refiller balance left) or `Refill failed: …` (with the transfers that could not be sent, e.g. because the refiller wallet is empty). Filter on `labels.rateFeed="refill-relayers"`. A failed transfer is simply retried on the next daily run, and the 7-day threshold leaves plenty of room for that.
-- **Dry run**: set `refill_dry_run = true` in `terraform.tfvars` to make the functions log what they would send without sending anything, e.g. for the first days in a new environment.
+- **Dry run**: the deployed functions always send. To preview what a run would do, use the script locally: `npm run refill:<chain> -- --dry-run` (mind the `--`, without it npm swallows the flag and the script runs live).
 - **New rate feeds** are picked up automatically: the scheduler message carries the rate feed keys from `infra/relayer_addresses.json`, so a `terraform apply` after adding a feed is enough. Add a per-feed entry to `DAILY_COST` only if the feed relays at a different pace than the chain default.
 - **Pausing**: pause the `refill-relayers-<chain>` job in Cloud Scheduler, or remove `refiller_private_key` from `terraform.tfvars` and apply to tear the automated refill down.
 
