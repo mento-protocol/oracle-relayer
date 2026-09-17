@@ -152,17 +152,23 @@ resource "google_cloudfunctions2_function" "refill_relayers" {
     # fight over its nonce.
     max_instance_count = 1
 
-    environment_variables = {
-      GCP_PROJECT_ID                 = module.oracle_relayer.project_id
-      SLACK_BOT_TOKEN_SECRET_ID      = google_secret_manager_secret.slack_bot_token.secret_id
-      SLACK_CHANNEL                  = local.slack_channel
-      RELAYER_MNEMONIC_SECRET_ID     = google_secret_manager_secret.relayer_mnemonic.secret_id
-      REFILLER_PRIVATE_KEY_SECRET_ID = google_secret_manager_secret.refiller_private_key[0].secret_id
-      LOG_EXECUTION_ID               = "true"
-      NODE_ENV                       = each.value.is_production ? "production" : "development"
-      CHAIN                          = each.key
-      FUNCTION_REGION                = var.region
-    }
+    environment_variables = merge(
+      {
+        GCP_PROJECT_ID                 = module.oracle_relayer.project_id
+        SLACK_BOT_TOKEN_SECRET_ID      = google_secret_manager_secret.slack_bot_token.secret_id
+        SLACK_CHANNEL                  = local.slack_channel
+        RELAYER_MNEMONIC_SECRET_ID     = google_secret_manager_secret.relayer_mnemonic.secret_id
+        REFILLER_PRIVATE_KEY_SECRET_ID = google_secret_manager_secret.refiller_private_key[0].secret_id
+        LOG_EXECUTION_ID               = "true"
+        NODE_ENV                       = each.value.is_production ? "production" : "development"
+        CHAIN                          = each.key
+        FUNCTION_REGION                = var.region
+      },
+      # Same dedicated RPC as the relay function, where one is configured
+      # (celo mainnet for now). Sequential transfers from a single wallet need
+      # consistent nonce and balance reads, which the public RPC cannot promise.
+      each.value.rpc_url_secret_id != null ? { RPC_URL_SECRET_ID = one(google_secret_manager_secret.celo_rpc_url[*].secret_id) } : {},
+    )
   }
 
   event_trigger {

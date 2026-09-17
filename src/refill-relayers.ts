@@ -4,6 +4,7 @@ import {
   Chain,
   createPublicClient,
   createWalletClient,
+  fallback,
   http,
   parseEther,
 } from "viem";
@@ -16,7 +17,7 @@ import {
   polygon,
   polygonAmoy,
 } from "viem/chains";
-import { deriveRelayerAccount } from "./utils";
+import { deriveRelayerAccount, redactRpcUrl } from "./utils";
 
 // Refill thresholds are expressed in days of runway rather than a flat token
 // amount, because burn per relayer differs by ~10x between feed classes on the
@@ -232,6 +233,9 @@ export interface RefillResult {
  * @param mnemonic The relayer mnemonic the signer addresses are derived from
  * @param refillerPrivateKey Private key of the wallet that pays for the top-ups
  * @param dryRun When true, nothing is sent; transfers are only reported
+ * @param rpcUrl Optional dedicated RPC URL, preferred over the chain's public
+ *   RPC (which stays as the fallback). It embeds an access token, so it is
+ *   redacted from every error this function records or throws.
  */
 export async function refillRelayers(
   chainName: string,
@@ -239,6 +243,36 @@ export async function refillRelayers(
   mnemonic: string,
   refillerPrivateKey: string,
   dryRun = false,
+  rpcUrl?: string,
+): Promise<RefillResult> {
+  try {
+    return await runRefill(
+      chainName,
+      rateFeedKeys,
+      mnemonic,
+      refillerPrivateKey,
+      dryRun,
+      rpcUrl,
+    );
+  } catch (error) {
+    // Anything thrown outside the per-transfer try/catch (e.g. a failed balance
+    // read) can still carry the RPC URL, so rethrow a redacted copy.
+    throw new Error(
+      redactRpcUrl(
+        error instanceof Error ? error.message : String(error),
+        rpcUrl,
+      ),
+    );
+  }
+}
+
+async function runRefill(
+  chainName: string,
+  rateFeedKeys: string[],
+  mnemonic: string,
+  refillerPrivateKey: string,
+  dryRun: boolean,
+  rpcUrl: string | undefined,
 ): Promise<RefillResult> {
   if (!(chainName in chains)) {
     throw new Error(`Unsupported chain: ${chainName}`);
@@ -252,15 +286,16 @@ export async function refillRelayers(
       ? (trimmedKey as `0x${string}`)
       : `0x${trimmedKey}`,
   );
-  const publicClient = createPublicClient({
-    chain,
-    transport: http(chain.rpcUrls.default.http[0]),
-  });
-  const walletClient = createWalletClient({
-    account,
-    chain,
-    transport: http(chain.rpcUrls.default.http[0]),
-  });
+  // All transfers come from one wallet, one after the other, so reads have to
+  // be consistent between calls. Public RPCs such as Celo's Forno are
+  // load-balanced across nodes at differing chain heights, which can return a
+  // stale nonce ("nonce too low") or a stale balance. Prefer the dedicated
+  // endpoint when there is one and keep the public RPC as the fallback
+  // (mirrors initTransport() in relay.ts).
+  const publicRpc = http(chain.rpcUrls.default.http[0]);
+  const transport = rpcUrl ? fallback([http(rpcUrl), publicRpc]) : publicRpc;
+  const publicClient = createPublicClient({ chain, transport });
+  const walletClient = createWalletClient({ account, chain, transport });
   const getBalanceInNative = async (address: `0x${string}`) =>
     Number(await publicClient.getBalance({ address })) / 1e18;
 
@@ -320,7 +355,10 @@ export async function refillRelayers(
     } catch (error) {
       row.action = `FAILED to send ${String(transferAmount)}`;
       errors.push(
-        `${rateFeedKey}: failed to send ${String(transferAmount)} ${symbol} to ${relayerAccount.address}: ${error instanceof Error ? error.message : String(error)}`,
+        redactRpcUrl(
+          `${rateFeedKey}: failed to send ${String(transferAmount)} ${symbol} to ${relayerAccount.address}: ${error instanceof Error ? error.message : String(error)}`,
+          rpcUrl,
+        ),
       );
     }
   }
@@ -402,6 +440,11 @@ async function main() {
   }
 
   const mnemonic = await getSecret(config.RELAYER_MNEMONIC_SECRET_ID);
+  // Not part of the generated .env; export RPC_URL_SECRET_ID to use the
+  // dedicated RPC for a manual run as well.
+  const rpcUrl = config.RPC_URL_SECRET_ID
+    ? (await getSecret(config.RPC_URL_SECRET_ID)).trim()
+    : undefined;
 
   const result = await refillRelayers(
     chainArg,
@@ -409,6 +452,7 @@ async function main() {
     mnemonic,
     privateKey,
     dryRun,
+    rpcUrl,
   );
   const { symbol } = result;
 
@@ -417,6 +461,9 @@ async function main() {
     `Refiller: ${result.refillerAddress} (${result.refillerBalanceBefore.toFixed(2)} ${symbol})`,
   );
   console.log(`Key:      ${keySource}`);
+  console.log(
+    `RPC:      ${rpcUrl ? "dedicated, public as fallback" : "public"}`,
+  );
   console.log(`Mode:     ${dryRun ? "dry run" : "live"}`);
 
   printRunwayTable(result.rows, symbol);

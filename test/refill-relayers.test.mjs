@@ -4,6 +4,7 @@ import test from "node:test";
 import { URL } from "node:url";
 
 import { computeTopUp } from "../dist/refill-relayers.js";
+import { redactRpcUrl } from "../dist/utils.js";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
@@ -73,4 +74,39 @@ test("the automated refill is wired from scheduler to function", async () => {
   assert.match(index, /rate_feeds: rateFeedKeys/);
   // A single wallet pays for every transfer, so runs must never overlap
   assert.match(cloudFunction, /max_instance_count\s*=\s*1/);
+});
+
+test("redacts the dedicated RPC URL from text that is about to be logged", () => {
+  const url = "https://example.quiknode.pro/s3cr3t-t0ken/";
+  const viemError = `HTTP request failed.\n\nURL: ${url}\nRequest body: {"method":"eth_sendRawTransaction"}\nDetails: fetch failed (${url})`;
+
+  const redacted = redactRpcUrl(viemError, url);
+  assert.ok(!redacted.includes("s3cr3t-t0ken"));
+  assert.equal(redacted.split("<dedicated-rpc-url>").length - 1, 2);
+  // Without a dedicated RPC there is nothing to redact
+  assert.equal(redactRpcUrl(viemError, undefined), viemError);
+});
+
+test("the refill function gets the same dedicated RPC as the relay function", async () => {
+  const [cloudFunction, index, refill] = await Promise.all([
+    read("infra/cloud-function.tf"),
+    read("src/index.ts"),
+    read("src/refill-relayers.ts"),
+  ]);
+  const refillBlock = cloudFunction.slice(
+    cloudFunction.indexOf(
+      '"google_cloudfunctions2_function" "refill_relayers"',
+    ),
+    cloudFunction.indexOf(
+      '"google_cloud_run_service_iam_member" "refill_relayers_invoker"',
+    ),
+  );
+
+  assert.match(
+    refillBlock,
+    /RPC_URL_SECRET_ID\s*=\s*one\(google_secret_manager_secret\.celo_rpc_url/,
+  );
+  assert.match(index, /config\.RPC_URL_SECRET_ID/);
+  // Dedicated endpoint first, public RPC as the fallback
+  assert.match(refill, /fallback\(\[http\(rpcUrl\), publicRpc\]\)/);
 });

@@ -101,11 +101,18 @@ cloudEvent("refillRelayers", async (event: CloudEvent<PubsubData>) => {
       getSecret(config.REFILLER_PRIVATE_KEY_SECRET_ID),
     ]);
 
+    // Only set where a dedicated RPC is configured (celo mainnet for now)
+    const rpcUrl = config.RPC_URL_SECRET_ID
+      ? (await getSecret(config.RPC_URL_SECRET_ID)).trim()
+      : undefined;
+
     const result = await refillRelayers(
       config.CHAIN,
       rateFeedKeys,
       mnemonic,
       refillerPrivateKey,
+      false,
+      rpcUrl,
     );
 
     const { symbol } = result;
