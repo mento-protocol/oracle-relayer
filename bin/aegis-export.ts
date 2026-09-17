@@ -4,9 +4,10 @@ import { config } from "../src/config";
 import getSecret from "../src/get-secret";
 import { deriveRelayerAccount, toRateFeedId } from "../src/utils";
 
-const RelayerAddresses = RelayerAddressesJson as {
-  [env in "celo" | "celo-sepolia"]: Record<string, Address>;
-};
+const RelayerAddresses = RelayerAddressesJson as Record<
+  "celo" | "celo-sepolia",
+  Record<string, Address>
+>;
 
 type Environment = keyof typeof RelayerAddresses;
 type RateFeed<T extends Environment> = keyof (typeof RelayerAddresses)[T];
@@ -67,7 +68,7 @@ const createRelayer = <T extends Environment>(
     rateFeed: formattedRateFeed,
     rateFeedId: toRateFeedId(formattedRateFeed),
     signerAddress: deriveRelayerAccount(mnemonic, rateFeedWithSlash).address,
-    relayerAddress: RelayerAddresses[env][rateFeed] as Address,
+    relayerAddress: RelayerAddresses[env][rateFeed],
   };
 };
 

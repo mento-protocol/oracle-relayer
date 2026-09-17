@@ -21,6 +21,11 @@ lint:
     - tfsec
     - trivy
     - markdown-table-prettify
+    # terrascan is unmaintained and its per-file policy download races on the
+    # shared ~/.terrascan clone in CI, failing most Trunk Check runs with
+    # "failed to download policies" and no findings. checkov and tflint keep
+    # covering infra/*.tf.
+    - terrascan
   enabled:
     - actionlint@1.7.7
     - checkov@3.2.369
@@ -39,7 +44,6 @@ lint:
     - shfmt@3.6.0
     - sort-package-json@2.14.0
     - terraform@1.1.0
-    - terrascan@1.19.1
     - tflint@0.55.1
     - trufflehog@3.88.6
     - yamllint@1.35.1

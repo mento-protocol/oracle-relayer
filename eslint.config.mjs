@@ -13,7 +13,7 @@ export default tseslint.config(
     ignores: ["**/*.mjs"],
     languageOptions: {
       parserOptions: {
-        project: true,
+        projectService: true,
         tsconfigRootDir: import.meta.dirname,
       },
     },
