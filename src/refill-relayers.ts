@@ -16,8 +16,6 @@ import {
   polygon,
   polygonAmoy,
 } from "viem/chains";
-import { config } from "./config";
-import getSecret from "./get-secret";
 import { deriveRelayerAccount } from "./utils";
 
 // Refill thresholds are expressed in days of runway rather than a flat token
@@ -35,6 +33,12 @@ const TARGET_RUNWAY_DAYS = 14;
 // tokens last months. Longer horizons keep the refills rare but meaningful.
 const GAS_FEED_MIN_RUNWAY_DAYS = 30;
 const GAS_FEED_TARGET_RUNWAY_DAYS = 90;
+
+// On testnets every relayer is scheduled once a day (see infra/scheduler.tf),
+// so a relayer burns one relay's worth of gas per day. We assume a flat 0.01
+// native tokens per relay for every testnet feed. In practice a testnet relay
+// costs even less; this is a deliberately simple over-estimate.
+const TESTNET_DAILY_COST = 0.01;
 
 // Native tokens burned per relayer per weekday (relays per weekday x average
 // cost per relay, rounded up), measured on-chain on 2026-09-03. Re-measure
@@ -97,10 +101,9 @@ const DAILY_COST: Record<
       usdt_usd: 1.5,
     },
   },
-  // Testnets relay once a day, so ~1 token/day is generous.
-  "celo-sepolia": { default: 1 },
-  "monad-testnet": { default: 1 },
-  "polygon-testnet": { default: 1 },
+  "celo-sepolia": { default: TESTNET_DAILY_COST },
+  "monad-testnet": { default: TESTNET_DAILY_COST },
+  "polygon-testnet": { default: TESTNET_DAILY_COST },
 };
 // Gas feeds are scheduled once a day (see infra/scheduler.tf) rather than
 // every minute, so they burn a single relay's worth of CELO per day.
@@ -150,12 +153,192 @@ function isGasFeed(rateFeedKey: string): boolean {
   return rateFeedKey.startsWith("celo_") && rateFeedKey !== "celo_usd";
 }
 
+export interface TopUp {
+  costPerDay: number;
+  threshold: number;
+  // Tokens to send, or null when the balance is at or above the threshold
+  transferAmount: number | null;
+}
+
+/**
+ * Decides whether a relayer needs a top-up and how much, from the static
+ * daily-cost table and the runway constants above.
+ *
+ * @param chainName The chain the relayer is on (e.g. "celo")
+ * @param rateFeedKey The rate feed key from the JSON file (e.g., "celo_php")
+ * @param balance The relayer signer's current balance in native tokens
+ */
+export function computeTopUp(
+  chainName: string,
+  rateFeedKey: string,
+  balance: number,
+): TopUp {
+  // Gas feeds only get the relaxed thresholds on celo mainnet, where the
+  // once-per-day relay economics apply.
+  const gasFeed = chainName === "celo" && isGasFeed(rateFeedKey);
+  const costPerDay = gasFeed
+    ? GAS_FEED_DAILY_COST
+    : (DAILY_COST[chainName].feeds?.[rateFeedKey] ??
+      DAILY_COST[chainName].default);
+  const minRunwayDays = gasFeed ? GAS_FEED_MIN_RUNWAY_DAYS : MIN_RUNWAY_DAYS;
+  const targetRunwayDays = gasFeed
+    ? GAS_FEED_TARGET_RUNWAY_DAYS
+    : TARGET_RUNWAY_DAYS;
+  const threshold = costPerDay * minRunwayDays;
+  const targetBalance = costPerDay * targetRunwayDays;
+
+  // Top up to the target rather than sending a fixed amount. Precision is
+  // not important here, so round up and add one token of slack.
+  const transferAmount =
+    balance < threshold ? Math.ceil(targetBalance - balance) + 1 : null;
+
+  return { costPerDay, threshold, transferAmount };
+}
+
 interface RunwayRow {
   rateFeed: string;
   balance: number;
   costPerDay: number;
   runwayDays: number;
   action: string;
+}
+
+interface Transfer {
+  rateFeed: string;
+  address: string;
+  amount: number;
+  hash: string;
+}
+
+export interface RefillResult {
+  symbol: string;
+  refillerAddress: string;
+  // Refiller balance before any transfer, and after the last one
+  refillerBalanceBefore: number;
+  refillerBalanceAfter: number;
+  rows: RunwayRow[];
+  transfers: Transfer[];
+  // One message per transfer that could not be sent
+  errors: string[];
+}
+
+/**
+ * Checks every relayer signer on a chain and tops up the ones that are below
+ * their runway threshold. Shared by the CLI (`npm run refill:<chain>`) and the
+ * `refillRelayers` cloud function.
+ *
+ * @param chainName The chain to refill on (e.g. "celo")
+ * @param rateFeedKeys The rate feed keys to check (e.g. ["eur_usd", "celo_php"])
+ * @param mnemonic The relayer mnemonic the signer addresses are derived from
+ * @param refillerPrivateKey Private key of the wallet that pays for the top-ups
+ * @param dryRun When true, nothing is sent; transfers are only reported
+ */
+export async function refillRelayers(
+  chainName: string,
+  rateFeedKeys: string[],
+  mnemonic: string,
+  refillerPrivateKey: string,
+  dryRun = false,
+): Promise<RefillResult> {
+  if (!(chainName in chains)) {
+    throw new Error(`Unsupported chain: ${chainName}`);
+  }
+  const chain = chains[chainName];
+  const symbol = chain.nativeCurrency.symbol;
+
+  const trimmedKey = refillerPrivateKey.trim();
+  const account = privateKeyToAccount(
+    trimmedKey.startsWith("0x")
+      ? (trimmedKey as `0x${string}`)
+      : `0x${trimmedKey}`,
+  );
+  const publicClient = createPublicClient({
+    chain,
+    transport: http(chain.rpcUrls.default.http[0]),
+  });
+  const walletClient = createWalletClient({
+    account,
+    chain,
+    transport: http(chain.rpcUrls.default.http[0]),
+  });
+  const getBalanceInNative = async (address: `0x${string}`) =>
+    Number(await publicClient.getBalance({ address })) / 1e18;
+
+  const refillerBalanceBefore = await getBalanceInNative(account.address);
+
+  const rows: RunwayRow[] = [];
+  const transfers: Transfer[] = [];
+  const errors: string[] = [];
+  for (const rateFeedKey of rateFeedKeys) {
+    const rateFeedName = convertRateFeedFormat(rateFeedKey);
+    const relayerAccount = deriveRelayerAccount(mnemonic, rateFeedName);
+
+    const balance = await getBalanceInNative(relayerAccount.address);
+    const { costPerDay, transferAmount } = computeTopUp(
+      chainName,
+      rateFeedKey,
+      balance,
+    );
+
+    const row: RunwayRow = {
+      rateFeed: rateFeedKey,
+      balance,
+      costPerDay,
+      runwayDays: balance / costPerDay,
+      action: "ok",
+    };
+    rows.push(row);
+
+    if (transferAmount === null) continue;
+
+    if (dryRun) {
+      row.action = `would send ${String(transferAmount)}`;
+      transfers.push({
+        rateFeed: rateFeedKey,
+        address: relayerAccount.address,
+        amount: transferAmount,
+        hash: "(dry run — not submitted)",
+      });
+      continue;
+    }
+
+    try {
+      const hash = await walletClient.sendTransaction({
+        to: relayerAccount.address,
+        value: parseEther(transferAmount.toString()),
+        chain,
+      });
+      await publicClient.waitForTransactionReceipt({ hash });
+
+      row.action = `send ${String(transferAmount)}`;
+      transfers.push({
+        rateFeed: rateFeedKey,
+        address: relayerAccount.address,
+        amount: transferAmount,
+        hash,
+      });
+    } catch (error) {
+      row.action = `FAILED to send ${String(transferAmount)}`;
+      errors.push(
+        `${rateFeedKey}: failed to send ${String(transferAmount)} ${symbol} to ${relayerAccount.address}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  const sentAnything = !dryRun && transfers.length > 0;
+  const refillerBalanceAfter = sentAnything
+    ? await getBalanceInNative(account.address)
+    : refillerBalanceBefore;
+
+  return {
+    symbol,
+    refillerAddress: account.address,
+    refillerBalanceBefore,
+    refillerBalanceAfter,
+    rows,
+    transfers,
+    errors,
+  };
 }
 
 /**
@@ -185,8 +368,6 @@ async function main() {
   }
 
   const dryRun = process.argv.includes("--dry-run");
-  const chain = chains[chainArg];
-  const symbol = chain.nativeCurrency.symbol;
 
   const relayerAddressesPath = path.resolve(
     process.cwd(),
@@ -195,7 +376,13 @@ async function main() {
   const relayerAddressesData = JSON.parse(
     fs.readFileSync(relayerAddressesPath, "utf8"),
   ) as Record<string, Record<string, string>>;
-  const relayerAddresses = relayerAddressesData[chainArg];
+  const rateFeedKeys = Object.keys(relayerAddressesData[chainArg]);
+
+  // Loaded here rather than at the top of the file: importing config validates
+  // the env vars, which would make this module unusable from the unit tests.
+  // It also loads .env, so it has to come before REFILLER_PRIVATE_KEY is read.
+  const { config } = await import("./config");
+  const { default: getSecret } = await import("./get-secret");
 
   const privateKey = process.env.REFILLER_PRIVATE_KEY;
   if (!privateKey) {
@@ -205,115 +392,45 @@ async function main() {
     process.exit(1);
   }
 
-  const account = privateKeyToAccount(`0x${privateKey}`);
-  const publicClient = createPublicClient({
-    chain,
-    transport: http(chain.rpcUrls.default.http[0]),
-  });
-  const walletClient = createWalletClient({
-    account,
-    chain,
-    transport: http(chain.rpcUrls.default.http[0]),
-  });
+  const mnemonic = await getSecret(config.RELAYER_MNEMONIC_SECRET_ID);
 
-  const refillerBalance =
-    Number(await publicClient.getBalance({ address: account.address })) / 1e18;
+  const result = await refillRelayers(
+    chainArg,
+    rateFeedKeys,
+    mnemonic,
+    privateKey,
+    dryRun,
+  );
+  const { symbol } = result;
+
   console.log(`Network:  ${chainArg}`);
   console.log(
-    `Refiller: ${account.address} (${refillerBalance.toFixed(2)} ${symbol})`,
+    `Refiller: ${result.refillerAddress} (${result.refillerBalanceBefore.toFixed(2)} ${symbol})`,
   );
   console.log(`Mode:     ${dryRun ? "dry run" : "live"}`);
 
-  const mnemonic = await getSecret(config.RELAYER_MNEMONIC_SECRET_ID);
+  printRunwayTable(result.rows, symbol);
 
-  const transfersMade = [];
-  const runwayRows: RunwayRow[] = [];
-  for (const [rateFeedKey] of Object.entries(relayerAddresses)) {
-    const rateFeedName = convertRateFeedFormat(rateFeedKey);
-    const relayerAccount = deriveRelayerAccount(mnemonic, rateFeedName);
-
-    // Gas feeds only get the relaxed thresholds on celo mainnet, where the
-    // once-per-day relay economics apply.
-    const gasFeed = chainArg === "celo" && isGasFeed(rateFeedKey);
-    const costPerDay = gasFeed
-      ? GAS_FEED_DAILY_COST
-      : (DAILY_COST[chainArg].feeds?.[rateFeedKey] ??
-        DAILY_COST[chainArg].default);
-    const minRunwayDays = gasFeed ? GAS_FEED_MIN_RUNWAY_DAYS : MIN_RUNWAY_DAYS;
-    const targetRunwayDays = gasFeed
-      ? GAS_FEED_TARGET_RUNWAY_DAYS
-      : TARGET_RUNWAY_DAYS;
-    const threshold = costPerDay * minRunwayDays;
-    const targetBalance = costPerDay * targetRunwayDays;
-
-    const balance = await publicClient.getBalance({
-      address: relayerAccount.address,
-    });
-    const balanceInNative = Number(balance) / 1e18;
-    const runwayDays = balanceInNative / costPerDay;
-
-    const row: RunwayRow = {
-      rateFeed: rateFeedKey,
-      balance: balanceInNative,
-      costPerDay,
-      runwayDays,
-      action: "ok",
-    };
-    runwayRows.push(row);
-
-    if (balanceInNative < threshold) {
-      // Top up to the target rather than sending a fixed amount. Precision is
-      // not important here, so round up and add one token of slack.
-      const transferAmount = Math.ceil(targetBalance - balanceInNative) + 1;
-      row.action = dryRun
-        ? `would send ${String(transferAmount)}`
-        : `send ${String(transferAmount)}`;
-
-      if (dryRun) {
-        transfersMade.push({
-          rateFeed: rateFeedKey,
-          address: relayerAccount.address,
-          amount: transferAmount,
-          hash: "(dry run — not submitted)",
-        });
-        continue;
-      }
-
-      try {
-        const hash = await walletClient.sendTransaction({
-          to: relayerAccount.address,
-          value: parseEther(transferAmount.toString()),
-          chain,
-        });
-        await publicClient.waitForTransactionReceipt({ hash });
-
-        transfersMade.push({
-          rateFeed: rateFeedKey,
-          address: relayerAccount.address,
-          amount: transferAmount,
-          hash,
-        });
-      } catch (error) {
-        row.action = `FAILED to send ${String(transferAmount)}`;
-        console.error(`Error transferring ${symbol} to ${rateFeedKey}:`, error);
-      }
-    }
-  }
-
-  printRunwayTable(runwayRows, symbol);
-
-  if (transfersMade.length > 0) {
+  if (result.transfers.length > 0) {
     console.log("\nTransfers made:");
-    for (const transfer of transfersMade) {
+    for (const transfer of result.transfers) {
       console.log(
         `- ${transfer.rateFeed}: ${String(transfer.amount)} ${symbol} to ${transfer.address} (tx: ${transfer.hash})`,
       );
     }
-  } else {
+  } else if (result.errors.length === 0) {
     console.log(
       "\nNo transfers were needed. All relayer accounts have sufficient balance.",
     );
   }
+
+  if (result.errors.length > 0) {
+    console.error("\nFailed transfers:");
+    for (const error of result.errors) console.error(`- ${error}`);
+    process.exit(1);
+  }
 }
 
-void main();
+if (require.main === module) {
+  void main();
+}

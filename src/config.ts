@@ -12,6 +12,9 @@ export interface Env {
   // dedicated QuickNode endpoint). When unset, the chain's default public RPC
   // is used. See initTransport() in relay.ts.
   RPC_URL_SECRET_ID?: string;
+  // Secret Manager secret ID holding the private key of the wallet that tops
+  // up the relayer signers. Only set on the refillRelayers cloud function.
+  REFILLER_PRIVATE_KEY_SECRET_ID?: string;
   CHAIN:
     | "celo"
     | "celo-sepolia"
@@ -38,6 +41,7 @@ const schema: JSONSchemaType<Env> = {
     NODE_ENV: { type: "string" },
     RELAYER_MNEMONIC_SECRET_ID: { type: "string" },
     RPC_URL_SECRET_ID: { type: "string", nullable: true },
+    REFILLER_PRIVATE_KEY_SECRET_ID: { type: "string", nullable: true },
     CHAIN: {
       type: "string",
       enum: [
