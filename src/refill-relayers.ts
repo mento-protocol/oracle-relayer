@@ -30,8 +30,9 @@ import { deriveRelayerAccount, redactRpcUrl } from "./utils";
 const MIN_RUNWAY_DAYS = 7;
 const TARGET_RUNWAY_DAYS = 14;
 
-// Gas feeds (the CELO_XXX feeds, except CELO/USD) relay once a day, so a few
-// tokens last months. Longer horizons keep the refills rare but meaningful.
+// Gas feeds (the CELO_XXX feeds, CELO/USD included since MGP-20) relay once a
+// day, so a few tokens last months. Longer horizons keep the refills rare but
+// meaningful.
 const GAS_FEED_MIN_RUNWAY_DAYS = 30;
 const GAS_FEED_TARGET_RUNWAY_DAYS = 90;
 
@@ -144,14 +145,14 @@ function convertRateFeedFormat(rateFeedKey: string): string {
 }
 
 /**
- * Whether a rate feed is a gas feed, i.e. a CELO_XXX feed other than CELO/USD.
+ * Whether a rate feed is a gas feed, i.e. a CELO_XXX feed (CELO/USD included).
  * These relay at most once per day and so use a lower refill threshold.
  *
  * @param rateFeedKey The rate feed key from the JSON file (e.g., "celo_php")
  * @returns true if the feed is a gas feed
  */
 function isGasFeed(rateFeedKey: string): boolean {
-  return rateFeedKey.startsWith("celo_") && rateFeedKey !== "celo_usd";
+  return rateFeedKey.startsWith("celo_");
 }
 
 export interface TopUp {
