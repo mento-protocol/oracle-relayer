@@ -40,8 +40,9 @@ test("gas feeds use the 30/90 day horizon, on celo mainnet only", () => {
     transferAmount: 5, // ceil(4.5 - 1.4) + 1
   });
   assert.equal(computeTopUp("celo", "celo_php", 26).transferAmount, null);
-  // CELO/USD relays every few minutes, so it is not a gas feed
-  assert.equal(computeTopUp("celo", "celo_usd", 0).costPerDay, 15);
+  // CELO/USD relays once a day since MGP-20, so it is a gas feed too
+  assert.equal(computeTopUp("celo", "celo_usd", 0).costPerDay, 0.05);
+  assert.equal(computeTopUp("celo", "celo_usd", 1.4).transferAmount, 5);
   // On testnets every feed relays once a day at a flat 0.01 tokens per relay
   assert.equal(computeTopUp("celo-sepolia", "celo_php", 0).costPerDay, 0.01);
   assert.equal(
