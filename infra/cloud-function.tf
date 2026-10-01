@@ -121,6 +121,81 @@ resource "google_cloud_run_service_iam_member" "mock_aggregator_updater_invoker"
   member   = "serviceAccount:${module.oracle_relayer.service_account_email}"
 }
 
+resource "google_cloudfunctions2_function" "refill_relayers" {
+  for_each    = local.refiller_chain_configs
+  project     = module.oracle_relayer.project_id
+  location    = var.region
+  name        = "refill-relayers-${each.key}"
+  description = "Tops up the relayer signers on ${each.key} that are below their runway threshold from the refiller wallet."
+
+  build_config {
+    runtime         = "nodejs22"
+    entry_point     = "refillRelayers"
+    service_account = module.oracle_relayer.service_account_name
+
+    source {
+      storage_source {
+        bucket = google_storage_bucket.relay_function.name
+        object = google_storage_bucket_object.source_code.name
+      }
+    }
+  }
+
+  service_config {
+    available_memory      = "256M"
+    ingress_settings      = "ALLOW_INTERNAL_ONLY"
+    service_account_email = module.oracle_relayer.service_account_email
+    # One balance read per relayer plus a send-and-wait per top-up, all
+    # sequential. Celo has 35 relayers, so leave generous headroom.
+    timeout_seconds = 300
+    # All transfers come from a single wallet, so two overlapping runs would
+    # fight over its nonce and could top the same signer up twice. One instance
+    # serving one request at a time rules that out. Concurrency 1 is already
+    # the platform default at this CPU size; it is pinned so that raising the
+    # memory/CPU later cannot silently lift it.
+    max_instance_count               = 1
+    max_instance_request_concurrency = 1
+
+    environment_variables = merge(
+      {
+        GCP_PROJECT_ID                 = module.oracle_relayer.project_id
+        SLACK_BOT_TOKEN_SECRET_ID      = google_secret_manager_secret.slack_bot_token.secret_id
+        SLACK_CHANNEL                  = local.slack_channel
+        RELAYER_MNEMONIC_SECRET_ID     = google_secret_manager_secret.relayer_mnemonic.secret_id
+        REFILLER_PRIVATE_KEY_SECRET_ID = google_secret_manager_secret.refiller_private_key[0].secret_id
+        LOG_EXECUTION_ID               = "true"
+        NODE_ENV                       = each.value.is_production ? "production" : "development"
+        CHAIN                          = each.key
+        FUNCTION_REGION                = var.region
+      },
+      # Same dedicated RPC as the relay function, where one is configured
+      # (celo mainnet for now). Sequential transfers from a single wallet need
+      # consistent nonce and balance reads, which the public RPC cannot promise.
+      each.value.rpc_url_secret_id != null ? { RPC_URL_SECRET_ID = one(google_secret_manager_secret.celo_rpc_url[*].secret_id) } : {},
+    )
+  }
+
+  event_trigger {
+    trigger_region        = var.region
+    event_type            = "google.cloud.pubsub.topic.v1.messagePublished"
+    pubsub_topic          = google_pubsub_topic.refill_relayers[each.key].id
+    retry_policy          = "RETRY_POLICY_DO_NOT_RETRY"
+    service_account_email = module.oracle_relayer.service_account_email
+  }
+
+  # The function reads the key at runtime, so the version has to exist first
+  depends_on = [google_secret_manager_secret_version.refiller_private_key]
+}
+
+resource "google_cloud_run_service_iam_member" "refill_relayers_invoker" {
+  for_each = local.refiller_chain_configs
+  project  = module.oracle_relayer.project_id
+  location = google_cloudfunctions2_function.refill_relayers[each.key].location
+  service  = google_cloudfunctions2_function.refill_relayers[each.key].name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${module.oracle_relayer.service_account_email}"
+}
+
 # Compute a hash of the source files to detect actual changes
 # This is more reliable than using the zip's SHA256 which includes metadata
 locals {

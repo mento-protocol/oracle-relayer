@@ -36,7 +36,7 @@ import {
 } from "./slack-notification";
 import getSecret from "./get-secret";
 import { relayerAbi } from "./relayer-abi";
-import { deriveRelayerAccount } from "./utils";
+import { deriveRelayerAccount, redactRpcUrl as redactUrl } from "./utils";
 
 // viem's default Amoy RPC (https://rpc-amoy.polygon.technology) stopped
 // resolving in DNS, which silently broke relays that rely on the chain's
@@ -104,16 +104,10 @@ async function initTransport(): Promise<void> {
   }
 }
 
-/**
- * The dedicated RPC URL embeds an access token, and viem request errors carry
- * the full request URL (as `url` and in `metaMessages`), so anything that
- * serializes a viem error must pass through here to keep the token out of
- * Cloud Logging.
- */
+// Keeps the dedicated RPC URL (and its access token) out of Cloud Logging.
+// See redactRpcUrl in utils.ts.
 function redactRpcUrl(text: string): string {
-  return dedicatedRpcUrl
-    ? text.replaceAll(dedicatedRpcUrl, "<dedicated-rpc-url>")
-    : text;
+  return redactUrl(text, dedicatedRpcUrl);
 }
 
 function getTransport(): Transport {

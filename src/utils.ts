@@ -77,3 +77,16 @@ export function getTraceId(event: CloudEvent<PubsubData>) {
 
   return traceId;
 }
+
+/**
+ * A dedicated RPC URL embeds an access token, and viem request errors carry
+ * the full request URL (as `url` and in `metaMessages`), so anything that
+ * serializes a viem error must pass through here to keep the token out of
+ * Cloud Logging.
+ *
+ * @param text The text that is about to be logged
+ * @param rpcUrl The dedicated RPC URL in use, if any
+ */
+export function redactRpcUrl(text: string, rpcUrl?: string): string {
+  return rpcUrl ? text.replaceAll(rpcUrl, "<dedicated-rpc-url>") : text;
+}
