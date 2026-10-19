@@ -1,6 +1,18 @@
 # osv-scanner ignore list (read by trunk's osv-scanner linter).
 #
-# Currently empty. Transitive advisories are patched through package.json
-# "overrides" (brace-expansion per minimatch line, fast-uri, js-yaml, qs, tar,
-# ...). Add an [[IgnoredVulns]] entry only when no compatible patched release
-# exists, and record the reason and the consumer chain here.
+# Transitive advisories are patched through package.json "overrides"
+# (brace-expansion per minimatch line, fast-uri, js-yaml, qs, tar, ...). Add an
+# [[IgnoredVulns]] entry only when no compatible patched release exists, and
+# record the reason and the consumer chain here.
+
+# braces <= 3.0.3: stack-exhaustion DoS on deeply nested patterns. The
+# advisory lists no patched version, and 3.0.3 is the latest release.
+# Consumer chain: nodemon@3.1.14 -> chokidar@3.6.0 -> braces@3.0.3. nodemon is
+# a devDependency used only by `npm run dev`, so braces is never in the
+# deployed function and never sees untrusted patterns. nodemon 3.1.14 is its
+# latest release and still requires chokidar ^3. Remove this entry when braces
+# or nodemon ships a fix; ignoreUntil forces a review if neither happens.
+[[IgnoredVulns]]
+id = "GHSA-vfj7-8cjw-p6xm"
+ignoreUntil = 2027-01-19T00:00:00Z
+reason = "No patched braces release; dev-only via nodemon -> chokidar 3.6.0. Revisit by 2027-01-19."
