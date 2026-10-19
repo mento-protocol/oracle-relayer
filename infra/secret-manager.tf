@@ -65,3 +65,22 @@ resource "google_secret_manager_secret_version" "celo_rpc_url" {
   secret      = google_secret_manager_secret.celo_rpc_url[0].id
   secret_data = var.celo_rpc_url
 }
+
+# Private key of the refiller wallet, which the refill-relayers cloud functions
+# send native tokens from to top up the relayer signers. Optional: created only
+# when `refiller_private_key` is set. Consumed via REFILLER_PRIVATE_KEY_SECRET_ID.
+resource "google_secret_manager_secret" "refiller_private_key" {
+  count     = local.refiller_enabled ? 1 : 0
+  project   = module.oracle_relayer.project_id
+  secret_id = var.refiller_private_key_secret_id
+
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret_version" "refiller_private_key" {
+  count       = local.refiller_enabled ? 1 : 0
+  secret      = google_secret_manager_secret.refiller_private_key[0].id
+  secret_data = var.refiller_private_key
+}

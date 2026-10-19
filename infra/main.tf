@@ -33,6 +33,13 @@ locals {
     for chain in local.mock_aggregator_updater_chains : chain => local.chain_configs[chain]
   }
 
+  # The automated refill (secret, topic, function and scheduler job per chain)
+  # is only deployed when a refiller key is configured. nonsensitive() is safe
+  # here for the same reason as celo_rpc_url_enabled above: it only exposes
+  # whether the key is set, never the key itself.
+  refiller_enabled       = nonsensitive(var.refiller_private_key != "")
+  refiller_chain_configs = local.refiller_enabled ? local.chain_configs : {}
+
   # Flattened scheduler jobs: "chain/rate_feed" => {chain, key, address}
   all_scheduler_jobs = merge([
     for chain, config in local.chain_configs : {
