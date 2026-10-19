@@ -2,7 +2,7 @@ version: 2
 
 # Dependency update policy. Mirrors the structure used in
 # mento-protocol/frontend-monorepo and mento-protocol/monitoring-monorepo:
-# weekly Monday batches, a supply-chain cooldown for version updates, grouped
+# batches every second Monday, a supply-chain cooldown for version updates, grouped
 # pull requests per risk tier, and review-sensitive packages kept in their own
 # pull requests. Security updates bypass cooldown and arrive immediately.
 #
@@ -11,13 +11,19 @@ version: 2
 # overrides, so an advisory against an overridden package needs a manual
 # override bump. Check `npm audit` when Dependabot reports that it cannot
 # update a package to a non-vulnerable version.
+#
+# Schedule: plain cron cannot express "every other week", so both ecosystems
+# use `mon%2`. Dependabot parses cron with the fugit library. `mon%2` matches
+# Mondays whose week count since Monday 2018-12-31 is even, an exact 14-day
+# cadence (next runs 2026-10-26 and 2026-11-09). Security updates ignore the
+# schedule and still open immediately.
+# Source: https://github.com/dependabot/dependabot-core/issues/12246
 updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
-      day: monday
-      time: "06:00" # trunk-ignore(yamllint/quoted-strings)
+      interval: cron
+      cronjob: 0 6 * * mon%2
       timezone: UTC
 
     # Buy supply-chain detection time. Most malicious-package incidents are
@@ -75,7 +81,7 @@ updates:
           - minor
           - patch
 
-      # Ungrouped production stragglers arrive as one weekly PR. Majors stay
+      # Ungrouped production stragglers arrive as one PR per run. Majors stay
       # individual PRs.
       production-misc:
         applies-to: version-updates
@@ -128,9 +134,8 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
-      day: monday
-      time: "06:00" # trunk-ignore(yamllint/quoted-strings)
+      interval: cron
+      cronjob: 0 6 * * mon%2
       timezone: UTC
 
     # Per-semver cooldown is not supported for github-actions; only
