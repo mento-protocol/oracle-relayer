@@ -6,10 +6,12 @@
 # For more information, run:
 #   $ gcloud topic gcloudignore
 #
+.claude
 .env.example
 .gcloudignore
 .git
 .gitignore
+.reviews
 .trunk
 .vscode
 

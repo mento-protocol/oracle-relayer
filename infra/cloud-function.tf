@@ -224,7 +224,8 @@ data "archive_file" "function_source" {
   output_path = "${path.module}/../function-source.zip"
 
   # Not sure if this is stricly necessary when defining a .gcloudignore file, but better safe than sorry
-  excludes = [".cursor",
+  excludes = [".claude",
+    ".cursor",
     ".DS_Store",
     # .env may hold private keys; keep this in sync with the .env* rule in .gitignore.
     ".env",
@@ -243,6 +244,7 @@ data "archive_file" "function_source" {
     ".github",
     ".gitignore",
     ".project_vars_cache",
+    ".reviews",
     ".terraform",
     ".terraform.lock.hcl",
     ".trunk",
