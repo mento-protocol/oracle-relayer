@@ -209,6 +209,14 @@ Before applying production Terraform changes:
 
 3. Inspect every planned addition, update, replacement, and removal. Pay special
    attention to chain- and feed-keyed `for_each` resources and scheduler payloads.
+   In a code-only release, the plan only updates function `build_config`,
+   replaces `google_storage_bucket_object.source_code`, and creates
+   `local_file.env_file`; treat any other destroy as a defect. Without
+   `refiller_private_key` in `terraform.tfvars`, the plan removes the automated
+   refill: the `refill-relayers-<chain>` functions and their invoker IAM members,
+   the scheduler jobs and topics, and the `refiller-private-key` secret and
+   version (see [Automated refill](#automated-refill)). Stop and fix the tfvars
+   before you apply.
 4. Apply only the reviewed saved plan with
    `terraform -chdir=infra apply "$relayer_plan"`.
 5. Confirm every deployed function is active. For every affected feed, verify
