@@ -50,13 +50,16 @@ lint:
 actions:
   disabled:
     - commitizen
+    - trunk-upgrade-available
+    - trunk-cache-prune
+    - trunk-share-with-everyone
+    - trunk-whoami
   enabled:
     - commitlint
     - is-local-function-working
     - trunk-announce
     - trunk-check-pre-push
     - trunk-fmt-pre-commit
-    - trunk-upgrade-available
     - todo-git-hook
   definitions:
     - id: todo-git-hook
